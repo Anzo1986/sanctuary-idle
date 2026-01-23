@@ -31,6 +31,32 @@ class SaveManager {
         localStorage.removeItem(this.STORAGE_KEY);
         window.location.reload();
     }
+
+    exportSaveToString(gameState) {
+        try {
+            const data = gameState.exportState();
+            const json = JSON.stringify(data);
+            // Simple Base64 encoding (UTF-8 safe wrapper)
+            const base64 = btoa(unescape(encodeURIComponent(json)));
+            return base64;
+        } catch (e) {
+            console.error('Export Failed:', e);
+            return null;
+        }
+    }
+
+    importSaveFromString(str) {
+        try {
+            if (!str) return null;
+            // Decode Base64
+            const json = decodeURIComponent(escape(atob(str)));
+            const data = JSON.parse(json);
+            return data;
+        } catch (e) {
+            console.error('Import Failed (Invalid Data):', e);
+            return null;
+        }
+    }
 }
 
 window.SaveManager = SaveManager;

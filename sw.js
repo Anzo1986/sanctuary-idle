@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sanctuary-idle-v53';
+const CACHE_NAME = 'sanctuary-idle-v54';
 const ASSETS = [
     './',
     './index.html',

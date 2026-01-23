@@ -602,6 +602,33 @@
                     </div>
                 </div>
 
+                <!-- Data Management Section -->
+                <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+                    <h3 data-i18n="settings.data_management" style="color:#aaa; font-size: 1rem; margin: 0 0 10px 0;">
+                        Data Management</h3>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <!-- Export -->
+                        <button id="btn-export-file" class="sys-btn" onclick="window.exportSaveToFile()"
+                            style="width:100%; color: var(--accent-gold); border-color: var(--accent-gold);"
+                            data-i18n="btn.download_save">
+                            Download Save File
+                        </button>
+
+                        <!-- Import -->
+                        <button id="btn-import-file" class="sys-btn"
+                            onclick="document.getElementById('import-file-input').click()"
+                            style="width:100%; color: #00ffff; border-color: #00ffff;" data-i18n="btn.load_save">
+                            Load Save File
+                        </button>
+                        <input type="file" id="import-file-input" accept=".json,.txt" style="display:none"
+                            onchange="window.importSaveFromFile(this)">
+                        <p data-i18n="lbl.load_warning_small"
+                            style="margin:0; font-size:0.7rem; color:#666; text-align:center;">
+                            Loading a file will overwrite current progress.
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

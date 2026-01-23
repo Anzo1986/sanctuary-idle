@@ -554,6 +554,75 @@ window.showUIText = function (text, x, y, color = '#fff') {
     }, 1000);
 };
 
+// --- Import/Export UI Functions ---
+window.exportSaveToFile = function () {
+    try {
+        const data = window.gameState.exportState();
+        // Pretty print for user readability in file
+        const json = JSON.stringify(data, null, 2);
+
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `SanctuaryIdle_Save_${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        window.showUIText(window.t('msg.save_downloaded'), window.innerWidth / 2, window.innerHeight / 2, '#00ff00');
+    } catch (e) {
+        console.error("Export File Error:", e);
+        alert(window.t('error'));
+    }
+};
+
+window.importSaveFromFile = function (input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!confirm(window.t('msg.load_confirm'))) {
+        input.value = ''; // Reset
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const content = e.target.result;
+            let data;
+            // 1. Try standard JSON
+            try {
+                data = JSON.parse(content);
+            } catch (jsonErr) {
+                // 2. Try Base64 Decode
+                try {
+                    const decoded = decodeURIComponent(escape(atob(content)));
+                    data = JSON.parse(decoded);
+                } catch (base64Err) {
+                    throw new Error("Invalid format");
+                }
+            }
+
+            if (data) {
+                window.gameState.importState(data);
+                window.saveManager.save(window.gameState);
+                window.location.reload();
+            } else {
+                throw new Error("No data found");
+            }
+        } catch (err) {
+            console.error("Import Error:", err);
+            alert(window.t('msg.load_error'));
+        }
+        input.value = ''; // Reset
+    };
+    reader.readAsText(file);
+};
+
 
 
 
