@@ -1,0 +1,2603 @@
+﻿:root {
+    /* Colors */
+    --bg-dark: #0a0a0c;
+    --bg-panel: #141416;
+    --accent-red: #8a1c1c;
+    --accent-gold: #cfb53b;
+    --text-main: #e0e0e0;
+    --text-muted: #888899;
+    --border-color: #333344;
+
+    /* Rarities */
+    --rarity-normal: #ffffff;
+    --rarity-magic: #4d90ff;
+    --rarity-rare: #ffff4d;
+    --rarity-legendary: #ff8000;
+    --rarity-unique: #cfb53b;
+
+    /* Fonts */
+    --font-heading: 'Cinzel', serif;
+    --font-body: 'Lato', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    height: 100vh;
+    overflow: hidden;
+}
+
+#app {
+    display: grid;
+    grid-template-columns: 300px 1fr 340px;
+    grid-template-rows: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.panel {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow: hidden;
+    /* Prevent panel itself from scrolling, force tab-content to do it */
+}
+
+.panel-header {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 2px solid var(--accent-red);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.panel-header h2 {
+    font-family: var(--font-heading);
+    color: var(--accent-gold);
+    margin: 0 0 10px 0;
+    text-align: center;
+}
+
+/* Tabs */
+.tab-container {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 5px;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-weight: bold;
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+}
+
+.tab-btn.active {
+    color: var(--accent-gold);
+    border-bottom-color: var(--accent-gold);
+}
+
+.tab-content {
+    display: none;
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    padding-right: 15px;
+    /* Reserve space for scrollbar */
+}
+
+.tab-content.active-content {
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* Center Panel */
+#panel-center {
+    border-left: none;
+    border-right: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    position: relative;
+    background: url('../assets/backgrounds/combat_bg.png') no-repeat center center;
+    background-size: cover;
+}
+
+#game-title {
+    font-family: var(--font-heading);
+    color: var(--accent-gold);
+    font-size: 2.5rem;
+    margin: 0 0 1rem 0;
+    text-shadow: 0 0 10px rgba(207, 181, 59, 0.5), 2px 2px 4px #000;
+    letter-spacing: 2px;
+}
+
+#game-version {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: -10px;
+    margin-bottom: 1rem;
+    font-family: var(--font-body);
+}
+
+#top-bar {
+    display: flex;
+    gap: 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.resource-display {
+    color: var(--accent-gold);
+    text-shadow: 2px 2px 4px #000;
+    /* Added shadow for readability */
+}
+
+#monster-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    z-index: 10;
+    position: relative;
+    /* Added to support absolute positioning of children */
+    overflow: visible;
+    /* modification */
+}
+
+#monster-name {
+    font-size: 1.5rem;
+    color: var(--accent-red);
+    margin-bottom: 1rem;
+    font-family: var(--font-heading);
+}
+
+#monster-hp-bar-container {
+    width: 60%;
+    height: 20px;
+    background-color: #333;
+    border: 1px solid #555;
+    position: relative;
+    margin-bottom: 3.5rem;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#monster-hp-bar {
+    width: 100%;
+    height: 100%;
+    background-color: var(--accent-red);
+    transition: width 0.1s linear;
+}
+
+#monster-hp-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 2px black;
+    z-index: 10;
+    font-weight: bold;
+}
+
+#monster-hp-percent {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translate(0, -50%);
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 2px black;
+    z-index: 10;
+    font-weight: bold;
+    color: #fff;
+    display: block;
+    /* Overrides inline display:none if needed via JS class, but JS will set style.display */
+}
+
+#monster-sprite {
+    width: 250px;
+    height: 250px;
+    cursor: pointer;
+    transition: transform 0.05s;
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* Context for absolute frame */
+}
+
+#monster-image {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    /* Optional, for crisp edges */
+    pointer-events: none;
+    /* Let click pass to container */
+    position: relative;
+    z-index: 1;
+}
+
+#monster-frame {
+    position: absolute;
+    top: -25%;
+    left: -25%;
+    width: 150%;
+    height: 150%;
+    pointer-events: none;
+    z-index: 2;
+    object-fit: contain;
+}
+
+#monster-sprite:active {
+    transform: scale(0.95);
+}
+
+/* DPS Display Enhanced */
+#dps-display {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    color: var(--text-main);
+}
+
+/* Unit List (Left) */
+.scroll-content {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 5px;
+}
+
+.unit-card {
+    background: #1f1f24;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    gap: 15px;
+    /* Increased gap */
+    align-items: flex-start;
+    /* Align to top to allow text wrapping below */
+    position: relative;
+    /* For absolute positioning of button if needed, though flex is better */
+    min-height: 80px;
+    /* Ensure enough height */
+}
+
+.unit-card:hover {
+    background: #2a2a30;
+    border-color: var(--accent-gold);
+}
+
+.unit-left-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 60px;
+    /* Match icon width */
+}
+
+.unit-icon-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 5px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #000;
+}
+
+.unit-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.unit-info-col {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    /* Prevent text spill */
+    min-width: 0;
+    /* Important for flex child text truncation */
+}
+
+.unit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.unit-name {
+    font-weight: bold;
+    color: var(--accent-gold);
+    font-size: clamp(0.85rem, 4vw, 1rem);
+    /* Responsive font scaling */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unit-cost {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-top: 2px;
+}
+
+.unit-desc {
+    font-size: 0.8rem;
+    color: #777;
+    margin: 4px 0;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unit-dps-row {
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping on very small screens */
+    align-items: baseline;
+    gap: 5px;
+}
+
+.unit-base-dps {
+    color: var(--text-main);
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.unit-total-dps {
+    color: #aaa;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.ascend-btn {
+    background: #a335ee !important;
+    border: none !important;
+    color: white !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.75rem !important;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+border: 1px solid #444;
+}
+
+.unit-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.unit-info {
+    flex-grow: 1;
+}
+
+
+.unit-name {
+    color: var(--accent-gold);
+    font-weight: bold;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Removed fixed font size reduction, handled by flow */
+}
+
+/* Container for name/cost vs button */
+.unit-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+}
+
+.unit-dps-row {
+    margin-top: 2px;
+    display: flex;
+    gap: 4px;
+    align-items: baseline;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.unit-total-dps {
+    color: #aaa;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.unit-desc {
+    font-size: 0.75rem;
+    /* Reduced from 0.8rem */
+    color: #666;
+    margin: 4px 0;
+}
+
+.unit-dps {
+    font-size: 0.75rem;
+    /* Reduced from 0.8rem */
+    color: #aaa;
+}
+
+/* Upgrade Cards */
+.upgrade-card {
+    background: #1a1a10;
+    border: 1px solid #444433;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.upgrade-card:hover {
+    border-color: var(--accent-gold);
+    background: #222215;
+}
+
+.upgrade-icon {
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.upgrade-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.upgrade-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--accent-gold);
+}
+
+.upgrade-desc {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.upgrade-cost {
+    font-size: 0.8rem;
+    color: #cfb53b;
+    /* Gold */
+    margin-top: 2px;
+}
+
+
+/* Inventory (Right) */
+#equipment-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 2rem;
+}
+
+.equip-slot {
+    aspect-ratio: 1;
+    border: 1px dashed var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.2);
+    text-align: center;
+    padding: 2px;
+    position: relative;
+}
+
+.item-level {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.7rem;
+    color: #00ff00;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+    z-index: 5;
+}
+
+#inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 1rem;
+}
+
+.inv-slot {
+    aspect-ratio: 1;
+    background: #1f1f24;
+    border: 1px solid var(--border-color);
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.inv-slot:hover {
+    border-color: #555;
+}
+
+/* Stat Rows */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #222;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row span {
+    color: #888;
+}
+
+.stat-row span.val {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Salvage Mode */
+.salvage-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #aaa;
+    padding: 5px 10px;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.salvage-btn.active {
+    background: var(--accent-red);
+    color: white;
+    border-color: red;
+}
+
+#app.salvage-active .inv-slot {
+    border-style: dashed;
+    border-color: #552222;
+}
+
+#app.salvage-active .inv-slot:hover {
+    background-color: #331111;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><path d="M3 6l3 18h12l3-18h-18zm19-4v2h-20v-2h5.711c.9 0 1.631-1.099 1.631-2h5.316c0 .901.73 2 1.631 2h5.711z"/></svg>'), auto;
+}
+
+/* Tooltips */
+#tooltip {
+    position: fixed;
+    /* Changed from absolute to fixed */
+    background: rgba(10, 10, 12, 0.95);
+    border: 1px solid var(--accent-gold);
+    padding: 10px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 3000;
+    /* Increased to sit above Modals (2000) */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    display: none;
+    min-width: 200px;
+    width: max-content;
+    max-width: 350px;
+    /* Reduced max-width for better fit on small screens */
+}
+
+@media (max-width: 768px) {
+    #tooltip {
+        font-size: 0.72rem;
+        /* 10% smaller than 0.8rem */
+        padding: 8px;
+        /* Slightly reduced padding */
+    }
+}
+
+.tt-header {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 2px;
+}
+
+.tt-stats {
+    color: #ccc;
+    line-height: 1.4;
+}
+
+.tt-stat-row {
+    display: flex;
+    justify-content: space-between;
+    white-space: nowrap;
+}
+
+.tt-equipped {
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px dashed #555;
+    color: #888;
+}
+
+.tt-compare-row {
+    color: #ff5555;
+}
+
+.tt-compare-row.better {
+    color: #55ff55;
+}
+
+.tt-set {
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid #336633;
+}
+
+.tt-set-name {
+    color: #00ff00;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+#logs-container {
+    flex-basis: 200px;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+#game-logs {
+    overflow-y: auto;
+    font-size: 0.8rem;
+    color: #aaa;
+    max-height: 150px;
+}
+
+/* Floating Text */
+.floating-text {
+    position: absolute;
+    pointer-events: none;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    text-shadow: 1px 1px 2px black;
+    transition: transform 1s ease-out, opacity 1s ease-out;
+    z-index: 100;
+}
+
+.floating-text.crit {
+    color: yellow;
+    font-size: 2.5rem;
+    text-shadow: 0 0 10px red;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+#system-footer {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    padding: 10px;
+    text-align: center;
+    background: transparent;
+    border-top: none;
+    z-index: 10;
+    pointer-events: none;
+    /* Let clicks pass through empty space */
+}
+
+#system-footer button {
+    pointer-events: auto;
+    /* Re-enable clicks on the button */
+}
+
+.sys-btn {
+    background: #333;
+    color: #ccc;
+    border: 1px solid #555;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 0 5px;
+    font-size: 0.8rem;
+}
+
+.sys-btn:hover {
+    background: #444;
+    color: #fff;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a20;
+    margin: 2% auto;
+    /* Smaller margin for more space */
+    padding: 0;
+    border: 1px solid var(--accent-gold);
+    width: 90vw;
+    height: 90vh;
+    flex-direction: column;
+}
+
+/* Fix for Reincarnation Modal Overflow */
+#reincarnation-modal .modal-content {
+    max-height: 85vh;
+    overflow-y: auto;
+    display: block;
+    /* Override flex to allow simple scrolling flow if needed, or keep flex but ensure scroll */
+    /* Using block simplifies scrolling for this specific content structure */
+}
+
+.modal-header {
+    background: #0f0f12;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.modal-body {
+    position: relative;
+    flex-grow: 1;
+    background: radial-gradient(circle at center, #222 0%, #111 100%);
+    overflow: hidden;
+}
+
+#paragon-points-display {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border: 1px solid #555;
+    color: var(--accent-gold);
+    z-index: 10;
+}
+
+#paragon-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* System Menu Buttons */
+.menu-btn {
+    background: #25252b;
+    border: 1px solid #444;
+    color: #e0e0e0;
+    padding: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: all 0.2s;
+    font-family: var(--font-heading);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.menu-btn:hover {
+    background: #33333d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.menu-btn:active {
+    transform: translateY(0);
+}
+
+#menu-modal .modal-content {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('../assets/ui/menu_bg.jpg') no-repeat center center;
+    background-size: cover;
+    border: 1px solid var(--accent-gold);
+    box-shadow: 0 0 20px rgba(207, 181, 59, 0.2);
+    display: flex;
+    /* Ensure flex for vertical layout */
+}
+
+.menu-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #1a1a20;
+    border-color: #333;
+    color: #666;
+    box-shadow: none;
+}
+
+.menu-btn.disabled:hover {
+    transform: none;
+    box-shadow: none;
+    background: #1a1a20;
+}
+
+#paragon-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#paragon-nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.paragon-node {
+    width: 30px;
+    height: 30px;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    /* Centering */
+    pointer-events: auto;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.paragon-node.start {
+    background: #fff;
+    border-color: #fff;
+}
+
+.paragon-node.major {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    /* Square for majors */
+}
+
+.paragon-node:hover {
+    border-color: #fff;
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.paragon-node.unlocked {
+    background: var(--accent-gold);
+    border-color: #ffeba1;
+    box-shadow: 0 0 10px var(--accent-gold);
+}
+
+.paragon-node.purchasable {
+    border-color: #00ff00;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+    }
+}
+
+#app.salvage-active .inv-slot,
+#app.salvage-active .equip-slot {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ctext y='20' font-size='20'%3E%E2%99%BB%EF%B8%8F%3C/text%3E%3C/svg%3E"), auto !important;
+    border-color: red !important;
+}
+
+#app.upgrade-active .inv-slot,
+#app.upgrade-active .equip-slot {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ctext y='20' font-size='20'%3E%E2%AC%86%EF%B8%8F%3C/text%3E%3C/svg%3E"), auto !important;
+    border-color: #00ff00 !important;
+
+}
+
+/* Floating Text System */
+.floating-text {
+    position: absolute;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    pointer-events: none;
+    animation: floatUp 1s forwards;
+    text-shadow: 1px 1px 0 #000;
+    z-index: 1000;
+    /* Above monsters */
+}
+
+.floating-text.crit {
+    color: #ffff00 !important;
+    font-size: 1.8rem;
+    text-shadow: 0 0 5px #ff0000;
+    z-index: 1001;
+}
+
+.floating-text.minion {
+    color: #00ffff;
+    font-size: 1rem;
+    opacity: 0.8;
+    z-index: 999;
+    animation: floatSide 1.5s forwards;
+    /* Distinct animation */
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-50px) scale(1.2);
+        opacity: 0;
+    }
+}
+
+@keyframes floatSide {
+    0% {
+        transform: translate(0, 0) scale(0.8);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: translate(10px, -20px) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(20px, -40px) scale(0.9);
+        opacity: 0;
+    }
+}
+
+.unit-card {
+    width: 100%;
+    border: 1px solid #444;
+    background: #1a1a20;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    /* Critical for Ascend Button */
+    border-radius: 4px;
+}
+
+#app.reforge-active .inv-slot,
+#app.reforge-active .equip-slot {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ctext y='20' font-size='20'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E"), auto !important;
+    border: 1px dashed #d4a1d4 !important;
+}
+
+#reforge-mode-btn.active {
+    background: #4a2a4a;
+    border-color: #d4a1d4;
+}
+
+/* ================= PARAGON BOARD ================= */
+#paragon-canvas-container {
+    width: 100%;
+    height: 70vh;
+    overflow: auto;
+    background: #111;
+    border: 2px solid #333;
+    position: relative;
+    cursor: grab;
+}
+
+#paragon-canvas-container:active {
+    cursor: grabbing;
+}
+
+#paragon-nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2400px;
+    height: 2400px;
+    pointer-events: none;
+}
+
+.paragon-node {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: auto;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    color: #888;
+}
+
+.paragon-node:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    z-index: 100;
+    border-color: white;
+    color: white;
+}
+
+.paragon-node.unlocked {
+    border-color: #cfb53b;
+    background: #554400;
+    color: #fff;
+    box-shadow: 0 0 10px #cfb53b;
+}
+
+.paragon-node.purchasable {
+    border-color: #00ff00;
+    box-shadow: 0 0 5px #00ff00;
+}
+
+.paragon-node.start {
+    width: 60px;
+    height: 60px;
+    background: #444;
+    border-color: #fff;
+    box-shadow: 0 0 20px #fff;
+    font-size: 30px;
+}
+
+.paragon-node.major {
+    width: 50px;
+    height: 50px;
+    border-color: #a335ee;
+}
+
+.paragon-node.legendary {
+    width: 70px;
+    height: 70px;
+    border-color: #ffd700;
+    box-shadow: 0 0 20px #ff8000;
+    font-size: 30px;
+}
+
+/* Specific Paragon Modal Overrides - FORCED */
+#paragon-modal .modal-content {
+    width: fit-content !important;
+    height: fit-content !important;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: auto !important;
+}
+
+#paragon-modal .paragon-header {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 1px solid #444;
+}
+
+.floating-text.crit-orange {
+    color: #ff8800 !important;
+    text-shadow: 0 0 10px #cc6600 !important;
+}
+
+.floating-text.crit-red {
+    color: #ff0000 !important;
+    text-shadow: 0 0 10px #cc0000 !important;
+}
+
+.floating-text.crit-purple {
+    color: #aa00ff !important;
+    text-shadow: 0 0 10px #8800cc !important;
+}
+
+/* Reincarnation Modal Overrides */
+#reincarnation-modal .modal-header {
+    background: transparent;
+    border-bottom: none;
+    text-shadow: 0 0 5px #000;
+    /* Improve text readability against image */
+}
+
+#reincarnation-modal h2 {
+    text-shadow: 0 0 10px #00aaaa;
+}
+
+#reincarnation-modal .modal-content {
+    width: 85vh;
+    /* Square based on height */
+    height: 85vh;
+    max-width: 95vw;
+    /* Safety for mobile/portrait */
+    margin: 4vh auto;
+    /* Center vertical */
+    border-radius: 12px;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+}
+
+/* Paragon Board Canvas (Behind Nodes) */
+#paragon-canvas {
+    background: url('../assets/backgrounds/paragon_board.jpg') no-repeat center center;
+    background-size: 100% 100%;
+}
+
+#paragon-canvas-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    border: 2px solid #333;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#paragon-board-wrapper {
+    position: relative;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    /* Width & Height set by JS */
+}
+
+/* Canvas & Layer overlap perfectly inside wrapper */
+#paragon-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../assets/backgrounds/paragon_board.jpg') no-repeat center center;
+    background-size: 100% 100%;
+}
+
+#paragon-nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.paragon-node {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 4px;
+    /* Square */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: auto;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    color: #888;
+}
+
+.paragon-node:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    z-index: 100;
+    border-color: white;
+    color: white;
+}
+
+.paragon-node.unlocked {
+    border-color: #cfb53b;
+    background: #4a3b10;
+    /* Solid Gold-ish fill */
+    color: #fff;
+    box-shadow: 0 0 10px #cfb53b;
+    transform: translate(-50%, -50%) scale(1.0);
+    z-index: 5;
+}
+
+.paragon-node.purchasable {
+    border-color: #00ff00;
+    background: #111;
+    /* Dark background to contrast with green border */
+    color: #aaa;
+    /* Grayed out icon until bought */
+    box-shadow: 0 0 10px #00ff00;
+    animation: pulse 1.5s infinite;
+    z-index: 10;
+}
+
+.paragon-node.start {
+    width: 50px;
+    height: 50px;
+    background: #cfb53b;
+    color: #000;
+    border-color: #fff;
+    z-index: 20;
+}
+
+.paragon-node.major {
+    border-color: #a335ee;
+}
+
+/* Close Button Universal Style (Missing previously?) */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #aaa;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 100;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: #fff;
+    text-shadow: 0 0 5px #fff;
+}
+
+/* Achievement Modal Background */
+#achievement-modal .modal-content {
+    background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url('../assets/ui/achievement_bg.jpg') !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    border: 1px solid #cfb53b;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    /* Full Flex Layout for Scrolling */
+    display: flex !important;
+    flex-direction: column !important;
+    height: 80vh !important;
+    max-height: 90vh !important;
+    overflow: hidden !important;
+    /* Adjustable Width */
+    width: 90% !important;
+    max-width: 900px !important;
+}
+
+#achievement-modal .modal-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(207, 181, 59, 0.3);
+    /* Subtle separator */
+    flex-shrink: 0;
+}
+
+/* Ascension Modal Overrides */
+#ascension-modal .modal-content {
+    background-color: #1a1a20;
+    /* Fallback */
+    /* Dynamic background set via JS (linear-gradient + image) */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+
+    width: 90% !important;
+    max-width: 900px !important;
+    height: 85vh !important;
+    margin: 5vh auto !important;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    border: 1px solid #444;
+
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#ascension-modal .modal-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+#ascension-tree-container {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 20px;
+    scrollbar-width: thin;
+}
+
+/* Skill System Styles */
+
+/* Active Skills Container (Left of Monster) */
+#active-skills-container {
+    position: absolute;
+    left: -60px;
+    /* Position to the left of the monster sprite */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 20;
+}
+
+.active-skill-slot {
+    width: 40px;
+    height: 40px;
+    background: #222;
+    border: 1px solid var(--accent-gold);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    cursor: help;
+    /* Tooltip support later */
+}
+
+/* Skill Modal Styles */
+.hero-select-card {
+    padding: 10px;
+    margin-bottom: 5px;
+    background: rgba(34, 34, 34, 0.6);
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-select-card:hover {
+    background: rgba(51, 51, 51, 0.8);
+    border-color: #666;
+}
+
+.hero-select-card.selected {
+    background: rgba(51, 34, 0, 0.7);
+    border-color: var(--accent-gold);
+}
+
+
+.hero-select-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+    border: 1px solid #444;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hero-select-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-select-card.selected .hero-select-icon {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 5px var(--accent-gold);
+}
+
+.hero-select-name {
+    font-weight: bold;
+    color: #ccc;
+}
+
+.hero-select-card.selected .hero-select-name {
+    color: var(--accent-gold);
+}
+
+/* Skill Cards in Modal */
+.skill-card {
+    background: rgba(31, 31, 36, 0.6);
+    border: 1px solid #444;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: transform 0.1s;
+}
+
+.skill-card:hover {
+    border-color: #777;
+    background: rgba(37, 37, 43, 0.8);
+}
+
+.skill-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.skill-card-icon {
+    font-size: 1.5rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    border-radius: 4px;
+}
+
+.skill-card-name {
+    font-weight: bold;
+    color: var(--accent-gold);
+    font-size: 0.95rem;
+}
+
+.skill-card-desc {
+    font-size: 0.8rem;
+    color: #999;
+    flex-grow: 1;
+    margin-bottom: 10px;
+    min-height: 40px;
+}
+
+.skill-buy-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.skill-buy-btn:hover:not(:disabled) {
+    background: var(--accent-gold);
+    color: #000;
+    border-color: var(--accent-gold);
+}
+
+.skill-buy-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #222;
+}
+
+.skill-card.owned {
+    border-color: #00ff00;
+}
+
+.skill-card.owned .skill-buy-btn {
+    background: green;
+    color: white;
+    border-color: #00ff00;
+}
+
+#monster-sprite {
+    position: relative;
+    /* Ensure it is an anchor for absolute children */
+}
+
+/* Position Container to the LEFT of the monster */
+/* Position Container to the LEFT of the monster */
+#active-skills-container {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Centered first */
+    margin-left: -240px;
+    /* Then offset to the left of the 250px monster + buffer */
+    top: 50%;
+    margin-top: 60px;
+    /* Shift down to clear HP Bar */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+/* Updates for Active Slots with Labels (External) */
+.active-skill-slot {
+    position: relative;
+    margin-left: 30px;
+    /* Space for label */
+    width: 64px !important;
+    height: 64px !important;
+    border: 2px solid #444 !important;
+    background: #222 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.active-skill-slot:hover {
+    border-color: #666;
+}
+
+.skill-key-label {
+    position: absolute;
+    left: -30px;
+    /* Outside to the left */
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    color: #ffd700;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 25px;
+    text-align: right;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+}
+
+.active-skill-slot .skill-icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 2px;
+}
+
+.empty-slot {
+    border-style: dashed;
+    opacity: 0.5;
+}
+
+.skill-cooldown-anim {
+    animation: skillCooldown 0.2s ease-out;
+}
+
+@keyframes skillCooldown {
+    0% {
+        transform: scale(0.9);
+        border-color: #fff;
+    }
+
+    50% {
+        transform: scale(1.1);
+        border-color: #00ffff;
+    }
+
+    100% {
+        transform: scale(1.0);
+    }
+}
+
+/* Equipped State in Modal */
+.skill-card.equipped {
+    border-color: #00ffff;
+    background: rgba(0, 255, 255, 0.1);
+}
+
+.skill-buy-btn.owned-btn {
+    background: #334433;
+    border-color: #668866;
+    color: #ccffcc;
+}
+
+/* Skill Cooldown Overlay */
+.skill-cooldown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.active-skill-slot.on-cooldown {
+    border-color: #555 !important;
+    cursor: default;
+}
+
+/* Skill Button Differentiation */
+.skill-card.owned .skill-buy-btn.equip-btn {
+    /* Explicitly keep green for equip */
+    background: #2e7d32;
+    border-color: #00ff00;
+}
+
+.skill-card.owned .skill-buy-btn.equip-btn:hover {
+    background: #00ff00;
+    color: #000;
+}
+
+.skill-card.owned .skill-buy-btn.unequip-btn {
+    /* Red for Unequip */
+    background: #550000;
+    border-color: #ff4444;
+    color: #ffcccc;
+}
+
+.skill-card.owned .skill-buy-btn.unequip-btn:hover {
+    background: #ff0000;
+    color: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 10px #ff0000;
+}
+
+/* --- PREMIUM MERCHANT UI --- */
+
+/* Modal Container Tweaks */
+#merchant-modal .modal-content {
+    background: #0f0f10;
+    /* Darker background */
+    border: 1px solid var(--accent-gold);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+}
+
+#merchant-modal .modal-header {
+    border-bottom: 2px solid var(--accent-gold);
+    background: linear-gradient(to right, #0f0f10, #2a2a20, #0f0f10);
+}
+
+.merchant-tab {
+    display: none;
+    padding: 20px;
+    height: 100%;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.merchant-intro {
+    background: rgba(20, 20, 25, 0.8);
+    border-left: 4px solid var(--accent-gold);
+    padding: 15px;
+    margin-bottom: 25px;
+    color: #ccc;
+    font-style: italic;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Alchemist Section */
+.convert-box {
+    background: rgba(30, 30, 35, 0.6);
+    padding: 20px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    width: 45%;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.convert-box:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-gold);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.convert-btn {
+    background: linear-gradient(to bottom, #333, #222);
+    border: 1px solid #555;
+    color: #e0e0e0;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.convert-btn:hover {
+    background: linear-gradient(to bottom, var(--accent-gold), #8a6d1c);
+    color: #000;
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(207, 181, 59, 0.3);
+}
+
+/* Gambler Section */
+.gamble-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    /* Smaller cards */
+    gap: 10px;
+    /* Reduced gap */
+    margin-top: 10px;
+    padding-bottom: 10px;
+}
+
+.gamble-item {
+    background: linear-gradient(135deg, #1a1a20, #25252a);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px;
+    /* Reduced padding */
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    height: 100%;
+    /* Uniform height */
+}
+
+.gamble-item:hover {
+    border-color: var(--accent-red);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5), 0 0 5px rgba(138, 28, 28, 0.5);
+    z-index: 10;
+}
+
+.gamble-icon {
+    font-size: 2rem;
+    /* Reduced from 2.5rem */
+    margin-bottom: 5px;
+    /* Reduced margin */
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+    transition: transform 0.2s;
+}
+
+.gamble-item:hover .gamble-icon {
+    transform: scale(1.1);
+}
+
+.gamble-label {
+    font-family: var(--font-heading);
+    font-weight: bold;
+    color: #fff;
+    font-size: 0.9rem;
+    /* Reduced from 1rem */
+    margin-bottom: 2px;
+    text-shadow: 0 2px 2px #000;
+}
+
+.cost {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.gamble-btn {
+    margin-top: auto;
+    /* Push to bottom */
+    background: #2a2a30;
+    border: 1px solid #555;
+    color: var(--accent-gold);
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+.gamble-item:hover .gamble-btn {
+    background: var(--accent-gold);
+    color: #000;
+    border-color: #fff;
+}
+
+#merchant-status {
+    height: 25px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+    text-shadow: 0 1px 2px black;
+    font-size: 0.95rem;
+    min-height: 25px;
+}
+
+.merchant-tab {
+    display: none;
+}
+
+/* =========================================
+   Paragon Window Global Styles
+   ========================================= */
+#paragon-modal .modal-content {
+    background: #0f0f10;
+    /* Unified Dark Background */
+    border: 1px solid var(--accent-gold);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+}
+
+#paragon-modal .paragon-header {
+    background: transparent;
+    /* No black bar */
+    border-bottom: 2px solid var(--accent-gold);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#paragon-modal .paragon-header h2 {
+    color: var(--accent-gold);
+    margin: 0;
+    text-shadow: 0 0 5px #000;
+}
+
+/* =========================================
+   Mobile / Responsive Layout
+   ========================================= */
+
+#mobile-nav {
+    display: none;
+}
+
+@media (max-width: 850px) {
+    body {
+        /* Fix iOS bounce */
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    #app {
+        display: block;
+        height: calc(100% - 60px);
+        /* Reserve space for nav */
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Panels take full space */
+    .panel {
+        width: 100%;
+        height: 100%;
+        border: none;
+        padding: 10px;
+    }
+
+    /* Default Visibility on Mobile: Combat Center */
+    #panel-left,
+    #panel-right {
+        display: none;
+    }
+
+    #panel-center {
+        display: flex;
+    }
+
+    /* Bottom Navigation */
+    #mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        background: #141416;
+        border-top: 1px solid #cfb53b;
+        z-index: 2000;
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-btn {
+        background: none;
+        border: none;
+        color: #666;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .nav-btn.active {
+        color: #cfb53b;
+        background: rgba(207, 181, 59, 0.05);
+    }
+
+    .nav-icon {
+        font-size: 1.4rem;
+        margin-bottom: 4px;
+    }
+
+    .nav-label {
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    /* Adjust Modal Sizes for Mobile */
+    .modal-content {
+        width: 95vw;
+        height: 85vh;
+        margin: 5% auto;
+    }
+
+    /* Adjust Font Sizes */
+    #game-title {
+        font-size: 1.8rem;
+    }
+
+    /* Adjust Top Bar Resources */
+    #top-bar {
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    /* Enhance Hit Targets */
+    .upgrade-card,
+    .unit-card {
+        padding: 15px 10px;
+    }
+
+    /* Merchant Adjustments */
+    #merchant-modal .modal-content {
+        height: 90vh;
+        width: 95%;
+        margin: 2.5% auto;
+    }
+
+    /* Stack Alchemist Boxes */
+    .convert-box {
+        width: 100% !important;
+        margin-bottom: 20px;
+    }
+
+    .merchant-intro {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+
+    /* Gambler Grid - smaller columns */
+    .gamble-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+    }
+
+    .gamble-item {
+        padding: 5px;
+    }
+
+    .gamble-icon {
+        font-size: 1.5rem;
+    }
+
+    #merchant-sidebar {
+        width: 100%;
+        height: 50px;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0;
+        border-bottom: 1px solid #333;
+        white-space: nowrap;
+        /* Prevent wrapping */
+    }
+
+    .merchant-nav-btn {
+        flex: 0 0 auto;
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+
+    #merchant-modal .modal-body {
+        flex-direction: column;
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    /* Move System Button and Pause Button up to avoid overlap with Nav */
+    #system-footer {
+        bottom: 60px;
+        /* Sit on top of nav */
+        width: 100%;
+        pointer-events: none;
+        /* Ensure clicks pass through empty space */
+        display: flex;
+        justify-content: center;
+        padding-bottom: 5px;
+        z-index: 1500;
+        /* Ensure on top */
+    }
+
+    /* Skills Modal Adjustments */
+    #skill-modal .modal-content {
+        height: 90vh;
+        width: 95%;
+        margin: 2.5% auto;
+        padding: 5px;
+    }
+
+    #skill-modal .modal-body {
+        flex-direction: column;
+        padding: 5px !important;
+        gap: 10px !important;
+        overflow-y: auto;
+    }
+
+    #skill-hero-list {
+        width: 100% !important;
+        height: 80px;
+        flex-direction: row;
+        display: flex;
+        overflow-x: auto;
+        border-right: none !important;
+        border-bottom: 1px solid #444;
+        white-space: nowrap;
+    }
+
+    .hero-select-card {
+        min-width: 60px;
+        margin-right: 10px;
+        padding: 5px;
+    }
+
+    #skill-list {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .skill-card {
+        flex-direction: row;
+        align-items: center;
+        min-height: 60px;
+    }
+
+    .skill-card-desc {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    /* Paragon Modal Adjustments */
+    #paragon-modal .modal-content {
+        width: 98%;
+        height: 90vh;
+        margin: 1% auto;
+    }
+
+    #paragon-container {
+        flex-direction: column;
+    }
+
+    #paragon-board-container {
+        width: 100%;
+        height: 60vh;
+        /* Give space for board */
+        overflow: auto;
+        /* Allow panning */
+        touch-action: none;
+        /* Let JS handle or native scroll */
+    }
+
+    #paragon-info-panel {
+        width: 100%;
+        height: 25vh;
+        border-left: none;
+        border-top: 2px solid #444;
+        overflow-y: auto;
+    }
+
+    #system-footer button {
+        pointer-events: auto;
+    }
+
+    /* Move Pause Button */
+    #btn-pause {
+        bottom: 80px;
+        /* 60px nav + 20px padding */
+        right: 10px;
+        z-index: 1500;
+    }
+
+    /* === HEADER FIXES === */
+    #panel-center {
+        /* Force panel to be a flex column that fits exactly in space */
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        /* Align top */
+        padding: 60px 5px 80px 5px;
+        /* Top padding for breathing room, bottom for footer */
+    }
+
+    #game-title {
+        font-size: 1.2rem;
+        /* Much smaller title */
+        margin: 5px 0;
+    }
+
+    #game-version {
+        font-size: 0.6rem;
+        margin-bottom: 5px;
+    }
+
+    #top-bar {
+        font-size: 0.75rem;
+        gap: 5px;
+        margin-bottom: 5px;
+        flex-direction: column;
+        /* Stack resources and affinity */
+        align-items: center;
+    }
+
+    .resource-display {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    /* Affinity (Class Sets) - allow horizontal scroll if too many */
+    #affinity-display {
+        display: flex;
+        flex-wrap: nowrap !important;
+        /* Override inline style */
+        overflow-x: auto;
+        max-width: 100%;
+        padding-bottom: 5px;
+        justify-content: flex-start !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure monster container takes remaining space and centers content */
+    #monster-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+        /* Important for flex scrolling */
+        overflow-y: auto;
+        position: relative;
+    }
+
+    /* Fix Skill Bar Position on Mobile */
+    /* Fix Skill Bar Position on Mobile */
+    #active-skills-container {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        flex-direction: column;
+        width: auto;
+
+        /* 
+           Monster Width = 180px
+           Center to Edge = 90px
+           Skill Icon Width = 35px
+           Desired Margin = ~5px
+           Total Left Offset = 90 + 35/2 + 5 = ~110px?
+           Actually, margin-left pushes it relative to center.
+           -90px is left edge of monster.
+           -40px (icon width) - 10px (gap) = -50px additional
+           Total margin-left = -140px
+        */
+        margin-left: -155px;
+        margin-top: 75px;
+        gap: 8px;
+    }
+
+    .active-skill-slot {
+        margin: 0;
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .active-skill-slot {
+        margin: 0 5px;
+        /* Even spacing */
+        width: 50px !important;
+        height: 50px !important;
+    }
+
+    .skill-key-label {
+        display: none;
+        /* Hide Q/W/E/R labels on mobile */
+    }
+
+    /* Scale down monster sprite if needed */
+    #monster-sprite {
+        width: 180px;
+        height: 180px;
+    }
+}
+
+/* ================= MOBILE WINDOW ADAPTATIONS ================= */
+@media (max-width: 768px) {
+
+    /* --- Merchant Window --- */
+    #merchant-modal .modal-content {
+        height: 98vh !important;
+        /* Maximize height */
+        width: 98vw !important;
+        /* Maximize width */
+        padding: 0 !important;
+        margin: 1vh auto !important;
+    }
+
+    #merchant-modal .modal-header {
+        padding: 5px 10px !important;
+    }
+
+    #merchant-modal .modal-header h2 {
+        font-size: 1.2rem !important;
+    }
+
+    #merchant-modal .modal-body {
+        flex-direction: column !important;
+        padding: 0 !important;
+    }
+
+    #merchant-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        padding: 5px !important;
+        border-right: none !important;
+        border-bottom: 1px solid #444;
+        white-space: nowrap;
+        gap: 5px;
+        min-height: 45px;
+        /* Fixed height for navbar */
+    }
+
+    .merchant-nav-btn {
+        flex: 0 0 auto;
+        background: #222 !important;
+        border: 1px solid #444 !important;
+        border-radius: 12px;
+        padding: 4px 10px !important;
+        margin-right: 5px;
+        font-size: 0.8rem !important;
+    }
+
+    .merchant-nav-btn.active {
+        background: var(--accent-gold) !important;
+        color: #000 !important;
+        border-color: var(--accent-gold) !important;
+        text-shadow: none !important;
+    }
+
+    #merchant-content-panel .merchant-intro {
+        font-size: 0.8rem !important;
+        padding: 5px !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Stack Alchemist Boxes */
+    #merchant-tab-alchemist>div {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    .convert-box {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 5px !important;
+        /* Very Compact padding */
+    }
+
+    .convert-box h3 {
+        font-size: 1rem !important;
+        margin-bottom: 5px !important;
+    }
+
+    .convert-btn {
+        padding: 5px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .gamble-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5px !important;
+        /* Tighter gap */
+    }
+
+    .gamble-item {
+        padding: 5px !important;
+        /* Compact item */
+        min-height: 0 !important;
+    }
+
+    .gamble-item .gamble-icon {
+        font-size: 1.2rem !important;
+        margin-bottom: 2px !important;
+    }
+
+    .gamble-item .gamble-label {
+        font-size: 0.8rem !important;
+    }
+
+    .gamble-item .cost {
+        font-size: 0.75rem !important;
+    }
+
+    .gamble-item .gamble-btn {
+        padding: 2px 5px !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* --- Skills Window --- */
+    #skill-modal .modal-content {
+        height: 95vh !important;
+        width: 95vw !important;
+        padding: 0 !important;
+    }
+
+    #skill-modal .modal-body {
+        flex-direction: column !important;
+        padding: 10px !important;
+    }
+
+    #skill-hero-list {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 120px;
+        flex-direction: row !important;
+        border-right: none !important;
+        border-bottom: 1px solid #444;
+        overflow-x: auto;
+        overflow-y: hidden;
+        display: flex !important;
+        gap: 10px;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .hero-select-card {
+        flex: 0 0 auto;
+        width: 120px;
+        /* Reduced width */
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        height: 90px;
+        justify-content: center;
+        padding: 5px !important;
+    }
+
+    .hero-select-card .hero-select-icon {
+        margin-bottom: 5px;
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .hero-select-card div {
+        font-size: 0.8rem !important;
+    }
+
+    #skill-list {
+        grid-template-columns: 1fr !important;
+        padding-bottom: 20px;
+    }
+
+    /* --- Paragon Window --- */
+    #paragon-modal .modal-content {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #0f0f10 !important;
+        /* Match other modals */
+    }
+
+    #paragon-canvas-container {
+        height: calc(100% - 60px) !important;
+        border: none !important;
+        overflow: auto !important;
+        /* prevent flex centering from hiding content off-screen */
+        display: block !important;
+        position: relative !important;
+    }
+
+    #paragon-board-wrapper {
+        /* wrapper is sized by JS, but margin auto helps if smaller than screen (unlikely on mobile) */
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+        transform-origin: 0 0;
+    }
+
+    #paragon-modal .paragon-header {
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border-bottom: 2px solid var(--accent-gold) !important;
+        /* Add divider */
+        background: transparent !important;
+        /* Remove black bar */
+        z-index: 100;
+        position: relative;
+        padding: 10px !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        align-items: center;
+    }
+
+    #paragon-modal .paragon-header h2 {
+        font-size: 1.2rem !important;
+        margin-bottom: 0 !important;
+        color: var(--accent-gold) !important;
+    }
+
+    /* Close button adjust (Universal for all modals on mobile) */
+    .close-modal {
+        position: absolute !important;
+        top: 10px !important;
+        right: 15px !important;
+        z-index: 9999 !important;
+        /* Always on top */
+        font-size: 2.5rem !important;
+        /* Big hit target */
+        color: #ff4444 !important;
+        /* Red for visibility */
+        line-height: 1 !important;
+        background: rgba(0, 0, 0, 0.5);
+        /* Contrast bg */
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        text-shadow: 0 0 5px black;
+        cursor: pointer;
+    }
+
+    /* Force Row Layout for Shop Units on Mobile (User Request) */
+    .unit-header {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    .unit-dps-row {
+        margin-top: 0 !important;
+        margin-left: 10px;
+        /* Space between name and DPS */
+        flex-shrink: 0;
+        /* Don't shrink DPS */
+    }
+
+    .unit-name {
+        flex: 1;
+        /* Take remaining space */
+        min-width: 0;
+        /* Allow shrinking/truncation mechanism to work */
+        max-width: none;
+        /* Remove explicit limit */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

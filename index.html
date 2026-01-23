@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sanctuary Idle</title>
+    <link rel="stylesheet" href="styles/main.css?v=51">
+    <link rel="stylesheet" href="styles/combat.css?v=51">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-startup-image" href="assets/ui/splash.png?v=51">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0c">
+</head>
+
+<body>
+    <!-- Custom Splash Screen Overlay -->
+    <div id="splash-overlay" style="
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100vw; 
+        height: 100vh; 
+        background-color: #000; 
+        z-index: 9999; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        transition: opacity 1s ease-out;
+    ">
+        <img src="assets/ui/splash.png?v=51" style="
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;
+        " alt="Sanctuary Idle">
+    </div>
+
+    <div id="app">
+        <!-- Left Panel: Units/Shop -->
+        <aside id="panel-left" class="panel">
+            <header class="panel-header">
+                <h2><span data-i18n="panel.sanctum">Sanctum</span></h2>
+                <div class="tab-container">
+                    <button class="tab-btn active" data-tab="units" data-i18n="tab.heroes">Heroes</button>
+                    <button class="tab-btn" data-tab="upgrades" data-i18n="tab.upgrades">Schmiede</button>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div id="unit-list" class="scroll-content tab-content active-content">
+                <!-- Units injected here -->
+            </div>
+
+            <div id="upgrade-list" class="scroll-content tab-content">
+                <!-- Upgrades injected here -->
+            </div>
+        </aside>
+
+        <!-- Center Panel: The Nephalem / Stages -->
+        <main id="panel-center" class="panel">
+            <h1 id="game-title" data-i18n="game.title">Sanctuary Idle</h1>
+            <div id="game-version">v0.9.4.9</div>
+            <div id="top-bar">
+                <div class="resource-display">
+                    <div class="res-item">
+                        🔥 <span id="cinders-val">0</span> <span data-i18n="res.cinders">Cinders</span>
+                    </div>
+                    <div class="res-item">
+                        🪙 <span id="gold-val">0</span> <span data-i18n="res.gold">Gold</span>
+                    </div>
+                    <div class="res-item">
+                        ✨ <span id="dust-val">0</span> <span data-i18n="res.dust">Dust</span>
+                    </div>
+                    <div class="res-item">
+                        🟣 <span id="essence-val">0</span> <span data-i18n="res.essence">Essence</span>
+                    </div>
+                </div>
+                <!-- Active Class Affinities -->
+                <div id="affinity-display" style="
+                    display: flex; 
+                    flex-wrap: wrap; 
+                    gap: 10px; 
+                    justify-content: center; 
+                    margin-top: 5px; 
+                    font-size: 0.8rem;
+                    min-height: 20px;
+                "></div>
+            </div>
+
+            <div id="stage-info">
+                <h3><span data-i18n="stage.prefix">Stage</span> <span id="stage-number">1</span></h3>
+                <div id="stage-progress">
+                    <div id="stage-bar"></div>
+                    <span id="stage-text">0/10</span>
+                </div>
+            </div>
+
+            <div id="monster-container">
+                <!-- Boss Timer -->
+                <div id="boss-timer-wrapper"
+                    style="display:none; text-align:center; width: 80%; max-width: 400px; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 20;">
+                    <div style="font-size:0.8rem; color:#ffffff; margin-bottom:2px; font-weight:bold;">Zeit bis zum Tod
+                    </div>
+                    <div id="boss-timer-container"
+                        style="position:relative; width: 100%; height:20px; background:#220000; border:1px solid #ff4400; border-radius:4px; overflow:hidden;">
+                        <div id="boss-timer-fill"
+                            style="width:100%; height:100%; background:#ff4400; transition: width 0.1s linear;"></div>
+                        <div id="boss-timer-text"
+                            style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:bold; text-shadow:1px 1px 2px #000;">
+                            60.0s</div>
+                    </div>
+                </div>
+
+                <div id="monster-name">Fallen Wretch</div>
+                <div id="monster-hp-bar-container">
+                    <div id="monster-hp-bar"></div>
+                    <span id="monster-hp-text">10/10</span>
+
+                    <span id="monster-hp-percent"
+                        style="display:none; margin-left: auto; padding-right: 5px; z-index: 2; font-size: 0.9rem; font-weight: bold; color: #fff;">100%</span>
+                </div>
+
+                <!-- Buffs Display -->
+                <div id="buffs-container"
+                    style="display:flex; justify-content:center; gap:5px; min-height:30px; margin-bottom:15px; position:relative; z-index:20;">
+                </div>
+
+                <!-- Active Skills Display (Moved out of monster-sprite to avoid animation) -->
+                <div id="active-skills-container"></div>
+
+                <div id="monster-sprite" class="clickable">
+                    <!-- Shadow Clone (Left of Monster, Original Position) -->
+                    <div id="clone-indicator"
+                        style="display:none; position:absolute; left:-50px; top:50%; transform:translateY(-50%); z-index:5;">
+                        <img src="assets/heroes/shadow_clone.png"
+                            style="width:50px; height:auto; filter:drop-shadow(0 0 5px #bf40bf);">
+                    </div>
+
+                    <!-- Skeleton (Bottom Left) -->
+                    <div id="skeleton-indicator"
+                        style="display:none; position:absolute; left:0; bottom:-60px; z-index:5;">
+                        <img src="assets/heroes/skeleton_warrior.png"
+                            style="width:50px; height:auto; filter:drop-shadow(0 0 5px #cccccc);">
+                    </div>
+
+                    <!-- Golem (Bottom Right of Skeleton) -->
+                    <div id="golem-indicator"
+                        style="display:none; position:absolute; left:60px; bottom:-60px; z-index:5;">
+                        <img src="assets/heroes/blood_golem.png"
+                            style="width:50px; height:auto; filter:drop-shadow(0 0 5px #ff0000);">
+                    </div>
+
+                    <!-- Spirit Wolf (Right Side, Under Monster) -->
+                    <div id="wolf-indicator" style="display:none; position:absolute; right:0; bottom:-60px; z-index:5;">
+                        <img src="assets/heroes/spirit_wolf.png"
+                            style="width:50px; height:auto; filter:drop-shadow(0 0 5px #00ff00);">
+                    </div>
+
+                    <!-- Valkyrie (Right Mid) -->
+                    <div id="valkyrie-indicator"
+                        style="display:none; position:absolute; right:-50px; top:50%; transform:translateY(-50%); z-index:5;">
+                        <img src="assets/skills/amazon/valkyrie_summon.png"
+                            style="width:50px; height:auto; filter:drop-shadow(0 0 5px #ffd700);">
+                    </div>
+
+                    <img id="monster-image" src="" alt="Monster" draggable="false">
+                    <img id="monster-frame" src="assets/ui/monster_frame.png" alt="Frame" draggable="false">
+                    <div id="combat-effects"></div>
+                </div>
+            </div>
+
+
+
+            <div id="dps-display" style="display:none;">
+                DPS: <span id="current-dps">0</span> | Click: <span id="click-damage">1</span>
+            </div>
+
+            <!-- Pause Button (Bottom Right) -->
+            <button id="btn-pause" onclick="window.togglePause()" style="
+                position: absolute; 
+                bottom: 20px; 
+                right: 20px; 
+                z-index: 100;
+                font-size: 0.8rem; 
+                padding: 5px 10px; 
+                background: rgba(0,0,0,0.8); 
+                border: 1px solid #777; 
+                color: #fff; 
+                cursor: pointer;
+                border-radius: 4px;
+            " data-i18n="btn.pause_auto">Pause Auto-Attack</button>
+        </main>
+
+        <footer id="system-footer">
+            <button id="btn-menu" class="sys-btn"
+                style="width: 150px; border-color: var(--accent-gold); color: var(--accent-gold);"
+                data-i18n="btn.system_menu">SYSTEM MENU</button>
+            <span id="save-status" style="font-size:0.8rem; color:#888; margin-left:10px;"></span>
+        </footer>
+
+        <!-- Right Panel: Inventory & Equipment -->
+        <aside id="panel-right" class="panel">
+            <header class="panel-header">
+                <h2><span data-i18n="panel.armory">Armory</span></h2>
+                <div class="tab-container">
+                    <button class="tab-btn active" data-tab="inventory" data-i18n="tab.items">Items</button>
+                    <button class="tab-btn" data-tab="stats" data-i18n="tab.char">Char</button>
+                </div>
+            </header>
+
+            <!-- Tab: Inventory -->
+            <div id="tab-inventory" class="tab-content active-content">
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <button id="salvage-btn" class="salvage-btn" style="flex:1;" data-i18n="action.salvage">Salvage
+                        Mode</button>
+                    <button id="upgrade-mode-btn" class="salvage-btn" style="flex:1;" data-i18n="action.upgrade">Upgrade
+                        Mode</button>
+                    <button id="reforge-mode-btn" class="salvage-btn" style="flex:1;" data-i18n="action.reforge">Reforge
+                        Mode</button>
+                </div>
+
+                <!-- Bulk Salvage Controls (Hidden by default) -->
+                <div id="salvage-controls"
+                    style="display:none; flex-wrap:wrap; gap:5px; margin-bottom:10px; padding:10px; border:1px solid #444; background:#222;">
+                    <div data-i18n="lbl.bulk_salvage"
+                        style="width:100%; text-align:center; font-size:0.8rem; color:#aaa; margin-bottom:5px;">Bulk
+                        Salvage</div>
+                    <button class="bulk-btn" data-rarity="normal" data-i18n="lbl.rarity_common"
+                        style="flex:1; background:#444; border:1px solid #fff; color:#fff; padding:5px;">White</button>
+                    <button class="bulk-btn" data-rarity="magic" data-i18n="lbl.rarity_magic"
+                        style="flex:1; background:#444; border:1px solid #00ff00; color:#00ff00; padding:5px;">Green</button>
+                    <button class="bulk-btn" data-rarity="rare" data-i18n="lbl.rarity_rare"
+                        style="flex:1; background:#444; border:1px solid #4d90ff; color:#4d90ff; padding:5px;">Blue</button>
+                    <button class="bulk-btn" data-rarity="epic" data-i18n="lbl.rarity_epic"
+                        style="flex:1; background:#444; border:1px solid #a335ee; color:#a335ee; padding:5px;">Violet</button>
+                    <button class="bulk-btn" data-rarity="legendary" data-i18n="lbl.rarity_legendary"
+                        style="flex:1; background:#444; border:1px solid #ff8000; color:#ff8000; padding:5px;">Orange</button>
+                </div>
+
+                <!-- Auto Salvage Settings -->
+                <div
+                    style="display:flex; gap:10px; align-items:center; margin-bottom:10px; font-size:0.8rem; color:#aaa; justify-content:center;">
+                    <span data-i18n="lbl.auto_salvage">Auto Salvage:</span>
+                    <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"
+                        title="Auto-Salvage Normal (White)">
+                        <input type="checkbox" id="auto-normal"
+                            onchange="window.toggleAutoSalvage('normal', this.checked)">
+                        N
+                    </label>
+                    <label style="display:flex; align-items:center; gap:3px; cursor:pointer; color:#00ff00;"
+                        title="Auto-Salvage Magic (Green)">
+                        <input type="checkbox" id="auto-magic"
+                            onchange="window.toggleAutoSalvage('magic', this.checked)"> M
+                    </label>
+                    <label style="display:flex; align-items:center; gap:3px; cursor:pointer; color:#4d90ff;"
+                        title="Auto-Salvage Rare (Blue)">
+                        <input type="checkbox" id="auto-rare" onchange="window.toggleAutoSalvage('rare', this.checked)">
+                        R
+                    </label>
+                    <label style="display:flex; align-items:center; gap:3px; cursor:pointer; color:#a335ee;"
+                        title="Auto-Salvage Epic (Violet)">
+                        <input type="checkbox" id="auto-epic" onchange="window.toggleAutoSalvage('epic', this.checked)">
+                        E
+                    </label>
+                </div>
+
+                <div id="equipment-slots">
+                    <div class="equip-slot" data-slot="head">Head</div>
+                    <div class="equip-slot" data-slot="chest">Chest</div>
+                    <div class="equip-slot" data-slot="hands">Hands</div>
+                    <div class="equip-slot" data-slot="legs">Legs</div>
+                    <div class="equip-slot" data-slot="mainhand">Weapon</div>
+                    <div class="equip-slot" data-slot="amulet">Amulet</div>
+                </div>
+
+                <div
+                    style="background:#222; border:1px solid #444; padding:5px; margin-bottom:10px; text-align:center; font-size:0.85rem; color:#aaa;">
+                    <span style="color:var(--accent-gold); font-weight:bold;">DPS:</span> <span id="inv-dps">0</span>
+                    <span style="margin:0 8px;">|</span>
+                    <span style="color:var(--accent-gold); font-weight:bold;">Click:</span> <span
+                        id="inv-click">0</span>
+                </div>
+
+                <div id="inventory-grid"></div>
+            </div>
+
+            <!-- Tab: Stats -->
+            <div id="tab-stats" class="tab-content scroll-content" style="display:none;">
+                <h4 data-i18n="stats.header.combat" style="margin:5px 0; color:#aaa; border-bottom:1px solid #444;">
+                    Combat Stats</h4>
+                <div class="stat-row" data-stat-id="globalDps">
+                    <span data-i18n="stat.globalDps">Global DPS Mult:</span>
+                    <span id="stat-dps-mult" class="val">100%</span>
+                </div>
+                <div class="stat-row" data-stat-id="clickDamage">
+                    <span data-i18n="stat.clickDamage">Click Damage:</span>
+                    <span id="stat-click-dmg" class="val">0</span>
+                </div>
+                <div class="stat-row" data-stat-id="clickDamage">
+                    <span data-i18n="stat.clickDamagePct">% Click Dmg:</span>
+                    <span id="stat-click-dmg-pct" class="val">0%</span>
+                </div>
+                <div class="stat-row" data-stat-id="critChance">
+                    <span data-i18n="stat.critChance">Crit Chance:</span>
+                    <span id="stat-crit-chance" class="val">5%</span>
+                </div>
+                <div class="stat-row" data-stat-id="critDamage">
+                    <span data-i18n="stat.critDamage">Crit Damage:</span>
+                    <span id="stat-crit-damage" class="val">150%</span>
+                </div>
+                <div class="stat-row" data-stat-id="attackSpeed">
+                    <span data-i18n="stat.attackSpeed">Attack Speed:</span>
+                    <span id="stat-atk-speed" class="val">100%</span>
+                </div>
+                <div class="stat-row" data-stat-id="heroDamage">
+                    <span data-i18n="stat.heroDamage">Hero Dmg:</span>
+                    <span id="stat-hero-dmg" class="val">0%</span>
+                </div>
+                <div class="stat-row" data-stat-id="bossDamage">
+                    <span data-i18n="stat.bossDamage">Boss Dmg:</span>
+                    <span id="stat-boss-dmg" class="val">0%</span>
+                </div>
+                <div class="stat-row" data-stat-id="doubleDamage">
+                    <span data-i18n="stat.doubleDamage">Double Dmg:</span>
+                    <span id="stat-double-dmg" class="val">0%</span>
+                </div>
+
+                <h4 data-i18n="stats.header.economy"
+                    style="margin:15px 0 5px 0; color:#aaa; border-bottom:1px solid #444;">Economy & Utility</h4>
+                <div class="stat-row" data-stat-id="goldFind">
+                    <span data-i18n="stat.goldFind">Gold Find:</span>
+                    <span id="stat-gold-find" class="val">100%</span>
+                </div>
+                <div class="stat-row" data-stat-id="magicFind">
+                    <span data-i18n="stat.magicFind">Magic Find:</span>
+                    <span id="stat-magic-find" class="val">0%</span>
+                </div>
+                <div class="stat-row" data-stat-id="cinderGain">
+                    <span data-i18n="stat.cinderGain">Cinder Gain:</span>
+                    <span id="stat-cinder-gain" class="val">100%</span>
+                </div>
+                <hr style="border-color:#333">
+
+
+                <div id="drop-rates-display" style="padding-top:10px;">
+                    <h4 style="margin:0 0 5px 0; color:#aaa;">Drop Rates (Approx)</h4>
+                    <div id="drop-rates-list" style="font-size:0.85rem; color:#888;"></div>
+                </div>
+
+                <div id="logs-container" style="margin-top:auto; padding-top:10px; border-top:1px solid #333;">
+                    <h4>Logs</h4>
+                    <div id="game-logs" class="scroll-content" style="max-height:150px; overflow-y:auto;"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Paragon Board Modal -->
+    <div id="paragon-modal" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-modal" id="close-paragon">&times;</span>
+            <div class="paragon-header">
+                <h2 data-i18n="modal.paragon">Paragon Board</h2>
+                <div><span data-i18n="paragon.points_available">Points Available</span>: <span id="paragon-points-val"
+                        style="color:#cfb53b">0</span></div>
+            </div>
+            <div id="paragon-canvas-container">
+                <div id="paragon-board-wrapper">
+                    <canvas id="paragon-canvas"></canvas>
+                    <div id="paragon-nodes-layer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ascension Modal -->
+    <div id="ascension-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-ascension">&times;</span>
+            <header class="modal-header">
+                <h2 id="ascension-title" data-i18n="modal.ascension">Hero Ascension</h2>
+                <div style="font-size:0.9rem; color:#aaa;"><span data-i18n="res.essence">Boss Essence</span>: <span
+                        id="modal-essence-val" style="color:#a335ee">0</span></div>
+            </header>
+            <div id="ascension-tree-container" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+                <!-- Generated JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reincarnation Modal -->
+    <div id="reincarnation-modal" class="modal">
+        <div class="modal-content"
+            style="text-align:center; background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('assets/reincarnation_header.png') no-repeat center center; background-size: cover; border: 1px solid #555;">
+            <span class="close-modal"
+                onclick="document.getElementById('reincarnation-modal').style.display='none'">&times;</span>
+
+            <header class="modal-header">
+                <h2 data-i18n="modal.reincarnation">Reincarnation</h2>
+            </header>
+            <div style="margin:20px 0;">
+                <div style="font-size:1.2rem; margin-bottom:10px;"><span
+                        data-i18n="reincarnate.current_divinity">Current Divinity</span>: <span id="current-divinity"
+                        style="color:#00ffff;">0</span></div>
+                <div style="font-size:1.5rem; margin-bottom:20px;" data-i18n="reincarnate.gain_breakdown">Gain Breakdown
+                </div>
+                <div style="margin-bottom:20px;">
+                    <div><span data-i18n="reincarnate.divinity_to_gain">Divinity to Gain</span>: <span
+                            id="pending-divinity" style="color:#00ffff; font-weight:bold;">+0</span></div>
+                </div>
+                <p style="color:#aaa; font-size:0.9rem;" data-i18n="reincarnate.warning_1">Reincarnating will reset your
+                    GOLD, CINDERS, STAGE, UNITS, and UPGRADES.</p>
+                <p style="color:#fff; font-size:0.9rem;" data-i18n="reincarnate.warning_2">You keep: EQUIPMENT, PARAGON,
+                    ASCENSION, ACHIEVEMENTS, and DIVINITY.</p>
+            </div>
+            <button id="btn-reincarnate" class="sys-btn"
+                style="font-size:1.2rem; padding:10px 30px; border-color:#00ffff; color:#00ffff;"
+                data-i18n="reincarnate.btn">ASCEND</button>
+
+            <hr style="border-color:#333; margin:20px 0;">
+
+            <h3 style="color:#cfb53b; margin-bottom:15px;" data-i18n="reincarnate.blessings">Divine Blessings</h3>
+            <div id="blessings-list" style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left;">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Dev Modal -->
+    <div id="dev-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="close-modal" id="close-dev">&times;</span>
+            <header class="modal-header" style="border-bottom: 1px solid #444; margin-bottom: 20px;">
+                <h2>Admin Tools</h2>
+            </header>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Gold:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('gold', 1000000)">+1M</button>
+                        <button class="sys-btn" onclick="window.devAdd('gold', 1000000000)">+1B</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Cinders:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('cinders', 1000000)">+1M</button>
+                        <button class="sys-btn" onclick="window.devAdd('cinders', 1000000000)">+1B</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Dust:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('materials', 1000)">+1k</button>
+                        <button class="sys-btn" onclick="window.devAdd('materials', 100000)">+100k</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Essence:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('bossEssence', 10)">+10</button>
+                        <button class="sys-btn" onclick="window.devAdd('bossEssence', 100)">+100</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Divinity:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('divinity', 10)">+10</button>
+                        <button class="sys-btn" onclick="window.devAdd('divinity', 100)">+100</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Skill Points:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('skillPoints', 1)">+1</button>
+                        <button class="sys-btn" onclick="window.devAdd('skillPoints', 10)">+10</button>
+                    </div>
+                </div>
+                <hr style="border-color:#333; width:100%; margin:10px 0;">
+                <div style="text-align:center; margin-top:5px;">
+                    <button class="sys-btn" style="width:100%" onclick="window.devAddItem()">Spawn Random
+                        Legendary</button>
+                    <button class="sys-btn" style="width:100%; margin-top:5px; color:#00ffff;"
+                        onclick="window.devAddSetItem()">Spawn Random Set Item</button>
+
+                    <div style="margin-top:10px; border-top:1px solid #444; padding-top:5px;">
+                        <select id="dev-unique-select"
+                            style="width:100%; padding:5px; background:#222; color:#fff; border:1px solid #555; margin-bottom:5px;">
+                            <option value="">Select Unique...</option>
+                        </select>
+                        <button class="sys-btn" style="width:100%; color:#cfb53b;"
+                            onclick="window.devSpawnSelectedUnique()">Spawn Unique</button>
+                    </div>
+
+                    <button class="sys-btn" style="width:100%; margin-top:5px; color:#ff8888;"
+                        onclick="window.devSkipToBoss()">Skip to Boss</button>
+                    <button class="sys-btn" style="width:100%; margin-top:5px; color:#ff0000; font-weight:bold;"
+                        onclick="window.devKillBoss()">INSTANT KILL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div id="menu-modal" class="modal">
+        <div class="modal-content"
+            style="max-width: 300px; height: auto; max-height: 80vh; padding: 20px; overflow-y: auto;">
+            <span class="close-modal" id="close-menu">&times;</span>
+            <header class="modal-header"
+                style="justify-content: center; background: transparent; border-bottom: 2px solid var(--accent-gold); margin-bottom: 20px;">
+                <h2 style="margin:0; color: var(--accent-gold);">System</h2>
+            </header>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="btn-reincarnate" class="menu-btn" style="color:#00ffff; border-color:#00ffff;"
+                    onclick="window.openReincarnationModal(); document.getElementById('menu-modal').style.display='none';"
+                    data-i18n="btn.menu_ascension">Ascension
+                    / Reincarnate</button>
+
+                <button id="btn-paragon" class="menu-btn" style="color:var(--accent-gold);"
+                    data-i18n="modal.paragon">Paragon Board</button>
+
+                <!-- Placeholders -->
+                <button id="btn-skills" class="menu-btn" style="color:#ff00ff;" data-i18n="btn.skills">Skills</button>
+                <button id="btn-merchant" class="menu-btn" style="color:#00ff00;"
+                    data-i18n="btn.merchant">Merchant</button>
+                <button class="menu-btn disabled" title="Coming Soon">Dungeons (Soon)</button>
+                <button class="menu-btn disabled" title="Coming Soon">Bestiarium (Soon)</button>
+                <button id="btn-achievements" class="menu-btn" style="color:var(--accent-gold);"
+                    data-i18n="btn.achievements">Achievements</button>
+
+                <hr style="border-color:#333; width:100%; opacity: 0.5;">
+
+                <!-- Settings Button -->
+                <button id="btn-settings" class="menu-btn"
+                    onclick="document.getElementById('settings-modal').style.display='block'; document.getElementById('menu-modal').style.display='none';"
+                    style="color: #fff;" data-i18n="btn.settings">Settings</button>
+
+                <button id="btn-save" class="menu-btn" data-i18n="btn.save_game">Save Game</button>
+                <button id="btn-reset" class="menu-btn" style="color:#ff4444" data-i18n="btn.hard_reset">Hard
+                    Reset</button>
+
+                <hr style="border-color:#333; width:100%; opacity: 0.5;">
+
+                <button id="btn-dev" class="menu-btn" style="color:#aaa; font-size: 1rem;">Dev Tools</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content small-modal" style="max-width: 300px; height: auto; max-height: 80vh; padding: 20px;">
+            <span class="close-modal" id="close-settings"
+                onclick="document.getElementById('settings-modal').style.display='none';">×</span>
+            <header class="modal-header"
+                style="justify-content: center; background: transparent; border-bottom: 2px solid var(--accent-gold); margin-bottom: 20px;">
+                <h2 style="margin:0; color: var(--accent-gold);" data-i18n="modal.settings">Settings</h2>
+            </header>
+
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <!-- Audio Section -->
+                <div>
+                    <h3 data-i18n="settings.audio" style="color:#aaa; font-size: 1rem; margin: 0 0 10px 0;">Audio</h3>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label for="bgm-volume" style="color:#fff;" data-i18n="settings.volume">Volume</label>
+                            <input type="range" id="bgm-volume" min="0" max="1" step="0.05" style="width: 100px;">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:10px; color:#fff; cursor:pointer;">
+                            <input type="checkbox" id="bgm-mute">
+                            <span data-i18n="settings.mute_music">Mute Music</span>
+                        </label>
+                        <button id="bgm-next" class="sys-btn" style="margin: 0; margin-top: 5px;"
+                            data-i18n="settings.next_track">Next Track >></button>
+                    </div>
+                </div>
+
+                <!-- Add more settings here later -->
+                <button id="btn-guide" class="sys-btn"
+                    onclick="document.getElementById('guide-modal').style.display='block'"
+                    style="width:100%; margin-top:5px; padding:10px; color: var(--accent-gold); border-color: var(--accent-gold);"
+                    data-i18n="btn.guide">Guide</button>
+
+                <!-- Language Section -->
+                <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+                    <h3 data-i18n="settings.language" style="color:#aaa; font-size: 1rem; margin: 0 0 10px 0;">Language
+                    </h3>
+                    <div style="display:flex; gap:10px;">
+                        <button id="lang-btn-en" class="sys-btn" onclick="window.localizationManager.setLanguage('en')"
+                            style="flex:1; padding: 8px; font-size: 1.5rem; display:flex; align-items:center; justify-content:center;">
+                            <img src="assets/ui/flag_us.png" alt="English" style="width: 30px; height: auto;">
+                        </button>
+                        <button id="lang-btn-de" class="sys-btn" onclick="window.localizationManager.setLanguage('de')"
+                            style="flex:1; padding: 8px; font-size: 1.5rem; display:flex; align-items:center; justify-content:center;">
+                            <img src="assets/ui/flag_de.png" alt="Deutsch" style="width: 30px; height: auto;">
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div id="guide-modal" class="modal">
+        <div class="modal-content large-modal" style="padding: 20px; max-height: 85vh; overflow-y: auto;">
+            <span class="close-modal" onclick="document.getElementById('guide-modal').style.display='none'">×</span>
+            <header class="modal-header"
+                style="justify-content: center; border-bottom: 2px solid var(--accent-gold); margin-bottom: 20px;">
+                <h2 style="color:var(--accent-gold); margin:0;" data-i18n="guide.title">Game Guide</h2>
+            </header>
+            <div class="guide-body" style="color:#ddd; line-height:1.6;">
+                <!-- Basics -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.basics.title">Basics</h3>
+                    <p data-i18n="guide.basics.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+                <!-- Heroes -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.heroes.title">Heroes</h3>
+                    <p data-i18n="guide.heroes.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+                <!-- Upgrades -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.upgrades.title">Forge</h3>
+                    <p data-i18n="guide.upgrades.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+                <!-- Items -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.items.title">Items</h3>
+                    <p data-i18n="guide.items.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+                <!-- Stats -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.stats.title">Stats</h3>
+                    <p data-i18n="guide.stats.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+                <!-- Prestige -->
+                <div style="margin-bottom:25px;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;"
+                        data-i18n="guide.prestige.title">Prestige</h3>
+                    <p data-i18n="guide.prestige.text" data-i18n-html style="margin-top:0; font-size:0.9rem;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement Modal -->
+    <div id="achievement-modal" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-modal" id="close-achievement">&times;</span>
+            <div class="modal-header">
+                <h2 style="color:#ffd700" data-i18n="modal.achievements">Achievements</h2>
+                <div style="color:#aaa">Unlock permanent bonuses!</div>
+            </div>
+            <div id="achievement-list" class="scroll-content"
+                style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; flex: 1; overflow-y: auto;">
+                <!-- Injected JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Merchant Modal -->
+    <div id="merchant-modal" class="modal">
+        <!-- Style cleared, controlled by JS now -->
+        <div class="modal-content large-modal" style="display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Removed Duplicate Close Span -->
+            <div class="modal-header" style="flex-direction: column; align-items: flex-start; flex-shrink: 0;">
+                <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+                    <h2 style="color:var(--accent-gold); text-shadow: 0 0 5px black; margin:0;"
+                        data-i18n="modal.market">The Market</h2>
+                    <span class="close-modal" id="close-merchant"
+                        onclick="document.getElementById('merchant-modal').style.display='none'">×</span>
+                </div>
+
+                <!-- Merchant Resources -->
+                <div
+                    style="display:flex; gap: 20px; color: #fff; font-size: 0.9rem; margin-top: 10px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px; border: 1px solid #444;">
+                    <span>🪙 <span id="merchant-gold-display">0</span> <span data-i18n="market.gold">Gold</span></span>
+                    <span>✨ <span id="merchant-dust-display">0</span> <span data-i18n="market.dust">Dust</span></span>
+                    <span>🔥 <span id="merchant-cinders-display">0</span> <span
+                            data-i18n="market.cinders">Cinders</span></span>
+                </div>
+
+                <div id="merchant-status"
+                    style="margin-left: auto; margin-right: 40px; font-size: 0.9rem; font-weight: bold; text-shadow: 0 0 5px black; height: 20px; margin-top: 5px;">
+                </div>
+            </div>
+
+            <div class="modal-body"
+                style="display: flex; padding: 0; background: transparent; flex: 1; height: auto; overflow: hidden;">
+
+                <!-- Left Sidebar: Selection List -->
+                <div id="merchant-sidebar"
+                    style="width: 250px; padding: 20px 0; display: flex; flex-direction: column; flex-shrink: 0;">
+                    <div style="color: #ccc; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; padding-left: 15px; font-weight: bold; text-shadow: 0 0 3px black;"
+                        data-i18n="lbl.merchants">
+                        Merchants</div>
+
+                    <button class="merchant-nav-btn active" id="tab-btn-alchemist"
+                        onclick="window.switchMerchantTab('alchemist')"
+                        style="text-align: left; background: transparent; border: none; color: #aaa; padding: 12px 15px; cursor: pointer; transition: all 0.2s; font-size: 1rem; text-shadow: 0 0 3px black;">
+                        <span style="font-size: 1.2rem; margin-right: 10px;">⚗️</span> <span
+                            data-i18n="market.alchemist">Alchemist</span>
+                    </button>
+
+                    <button class="merchant-nav-btn" id="tab-btn-gambler" onclick="window.switchMerchantTab('gambler')"
+                        style="text-align: left; background: transparent; border: none; color: #aaa; padding: 12px 15px; cursor: pointer; transition: all 0.2s; font-size: 1rem; text-shadow: 0 0 3px black;">
+                        <span style="font-size: 1.2rem; margin-right: 10px;">🎲</span> <span
+                            data-i18n="market.gambler">Gambler</span>
+                    </button>
+                </div>
+
+                <!-- Right Content Pane -->
+                <div id="merchant-content-panel"
+                    style="flex-grow: 1; position: relative; display: flex; flex-direction: column;">
+
+                    <!-- Content Scroll Area -->
+                    <div style="position: relative; z-index: 2; padding: 30px; height: 100%; overflow-y: auto;">
+
+                        <!-- Tab: Alchemist -->
+                        <div id="merchant-tab-alchemist" class="merchant-tab" style="display:block;">
+                            <div class="merchant-intro" style="background: rgba(0,0,0,0.6);"
+                                data-i18n="market.intro.alchemist">
+                                "All things change form. I simply guide the process."
+                            </div>
+
+                            <div
+                                style="display:flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 40px;">
+                                <!-- Box 1: Dust -> Gold -->
+                                <div class="convert-box">
+                                    <h3 style="color:var(--accent-gold); margin-bottom: 10px;"
+                                        data-i18n="market.transmute_gold">Transmute Gold</h3>
+                                    <div style="margin-bottom:15px; color:#aaa; font-size: 0.9rem;">
+                                        Rate: 1 Dust = <span id="rate-dust-gold"
+                                            style="color:#fff; font-weight:bold;">50</span> Gold
+                                    </div>
+                                    <div class="convert-section" style="flex-direction:column; gap: 8px;">
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'gold', 10)"><span
+                                                data-i18n="btn.convert">Convert</span> 10</button>
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'gold', 100)"><span
+                                                data-i18n="btn.convert">Convert</span> 100</button>
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'gold', 'max')"
+                                            data-i18n="market.convert_max">Convert All</button>
+                                    </div>
+                                </div>
+
+                                <!-- Box 2: Dust -> Cinders -->
+                                <div class="convert-box">
+                                    <h3 style="color:#ff4400; margin-bottom: 10px;" data-i18n="market.distill_cinders">
+                                        Distill Cinders</h3>
+                                    <div style="margin-bottom:15px; color:#aaa; font-size: 0.9rem;">
+                                        Rate: 10 Dust = <span id="rate-dust-cinders"
+                                            style="color:#fff; font-weight:bold;">1</span> <span
+                                            data-i18n="res.cinders">Cinders</span>
+                                    </div>
+                                    <div class="convert-section" style="flex-direction:column; gap: 8px;">
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'cinders', 10)"><span
+                                                data-i18n="btn.convert">Convert</span> 10</button>
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'cinders', 100)"><span
+                                                data-i18n="btn.convert">Convert</span> 100</button>
+                                        <button class="convert-btn"
+                                            onclick="window.merchantConvert('dust', 'cinders', 'max')"
+                                            data-i18n="market.convert_max">Convert All</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Gambler -->
+                        <div id="merchant-tab-gambler" class="merchant-tab">
+                            <div class="merchant-intro" data-i18n="market.intro.gambler">
+                                "The house always wins... but maybe not today."
+                            </div>
+
+                            <div
+                                style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px;">
+                                <span style="color: #aaa; margin-right: 10px;" data-i18n="market.wager_currency">Wager
+                                    Currency:</span>
+                                <select id="gamble-currency" onchange="window.updateGamblePrices()"
+                                    style="background:#222; color:#fff; padding:5px 10px; border:1px solid #555; outline: none; border-radius: 4px;">
+                                    <option value="dust" data-i18n="res.dust">Arcane Dust</option>
+                                    <option value="gold" data-i18n="res.gold">Gold</option>
+                                </select>
+                            </div>
+
+                            <div class="gamble-grid">
+                                <div class="gamble-item" data-slot="random" onclick="window.merchantGamble('random')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">❓</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.random">Mystery</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="mainhand"
+                                    onclick="window.merchantGamble('mainhand')" style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">⚔️</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.mainhand">Weapon</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="head" onclick="window.merchantGamble('head')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">🧢</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.head">Helm</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="chest" onclick="window.merchantGamble('chest')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">👕</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.chest">Armor</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="hands" onclick="window.merchantGamble('hands')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">🧤</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.hands">Gloves</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="legs" onclick="window.merchantGamble('legs')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">👖</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.legs">Legs</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                                <div class="gamble-item" data-slot="amulet" onclick="window.merchantGamble('amulet')"
+                                    style="background: rgba(20,20,25,0.9);">
+                                    <div class="gamble-icon">📿</div>
+                                    <div class="gamble-label" data-i18n="market.gamble.label.amulet">Amulet</div>
+                                    <div class="cost">100</div>
+                                    <button class="gamble-btn" data-i18n="market.gamble.btn">Wager</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="cost">100 Dust</div>
+    </div>
+    </div>
+    </div>
+
+    </div>
+    </div>
+    </div>
+
+    <!-- Skills Modal -->
+    <div id="skill-modal" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-modal" id="close-skill">&times;</span>
+            <div class="modal-header">
+                <h2 data-i18n="modal.skills">Hero Skills</h2>
+                <div><span data-i18n="skills.points_available">Skill Points</span>: <span id="skill-points-val"
+                        style="color:#ffff00">0</span></div>
+            </div>
+
+            <!-- Active Skills Loadout Display -->
+            <div id="modal-active-skills" style="
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.5);
+                border-bottom: 1px solid #444;
+                min-height: 80px;
+                align-items: center;
+            ">
+                <!-- Injected via JS -->
+            </div>
+
+            <div class="modal-body" style="display:flex; padding: 20px; gap: 20px; background: #1a1a20;">
+                <!-- Left: Hero Selection -->
+                <div id="skill-hero-list" style="width: 30%; border-right: 1px solid #444; overflow-y: auto;">
+                    <!-- Injected JS -->
+                </div>
+                <!-- Right: Skills for Selected Hero -->
+                <div id="skill-selection-panel" style="flex-grow: 1; display:flex; flex-direction: column;">
+                    <h3 id="selected-hero-name"
+                        style="color:var(--accent-gold); border-bottom:1px solid #333; padding-bottom:10px;">Select a
+                        Hero</h3>
+                    <div id="skill-list"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <!-- Injected JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip" style="display:none;"></div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav id="mobile-nav">
+        <button class="nav-btn" onclick="window.switchMobileTab('sanctum')">
+            <span class="nav-icon">🏰</span>
+            <span class="nav-label" data-i18n="nav.sanctum">Sanctum</span>
+        </button>
+        <button class="nav-btn active" onclick="window.switchMobileTab('combat')">
+            <span class="nav-icon">⚔️</span>
+            <span class="nav-label" data-i18n="nav.combat">Combat</span>
+        </button>
+        <button class="nav-btn" onclick="window.switchMobileTab('armory')">
+            <span class="nav-icon">🎒</span>
+            <span class="nav-label" data-i18n="nav.armory">Armory</span>
+        </button>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="js/Unit.js"></script>
+    <script src="js/Item.js"></script>
+    <script src="js/Monster.js"></script>
+    <script src="js/Inventory.js"></script>
+    <script src="js/Upgrade.js"></script>
+    <script src="js/Paragon.js"></script>
+    <script src="js/AscensionManager.js"></script>
+    <script src="js/ReincarnationManager.js"></script>
+    <script src="js/AchievementManager.js"></script>
+    <script src="js/GameState.js?v=fixed60"></script>
+    <script src="js/SaveSystem.js"></script>
+    <script src="js/MerchantManager.js"></script>
+    <script src="js/DevTools.js"></script>
+    <script src="js/SkillManager.js?v=fixed60"></script>
+    <script src="js/AudioManager.js"></script>
+    <script src="js/translations.js"></script>
+    <script src="js/LocalizationManager.js"></script>
+    <script src="js/main.js?v=fixed60"></script>
+    <script src="js/ReincarnationUI.js"></script>
+</body>
+
+</html>
