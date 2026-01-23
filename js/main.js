@@ -266,24 +266,8 @@ function formatNumber(num) {
     if (num < 1000) {
         return Math.floor(num).toLocaleString();
     }
-    // Extended Suffixes
-    const suffixes = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg"];
-
-    // Use Log10 for robust calculation (avoids string length bug at 1e21+)
-    const suffixNum = Math.floor(Math.log10(num) / 3);
-
-    if (suffixNum >= suffixes.length) {
-        return num.toExponential(2);
-    }
-
-    let precision = 2;
-    if (suffixNum >= 3) precision = 3; // 4 digits total mostly
-
-    // Just to keep it clean (e.g. 100.00a)
-    let shortValue = num / Math.pow(1000, suffixNum);
-
-    // Remove trailing zeros if possible? fixed(2) usually fine.
-    return shortValue.toFixed(precision) + suffixes[suffixNum];
+    // format: 1.23E+15 -> 1.23E15
+    return num.toExponential(2).replace('e+', 'E');
 }
 
 function renderLogs() {
