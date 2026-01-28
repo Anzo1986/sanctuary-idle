@@ -142,6 +142,51 @@ if (savedData) {
         window.gameState.skillManager.migrateSkillIds();
     }
 
+    // --- MIGRATE LEGACY RUNES (Phase 6 Polish) ---
+    // Updates existing runes to have Icons and correct suffixes
+    if (window.gameState) {
+        const runeIconMap = {
+            'rune_power': 'assets/runes/rune_power.png',
+            'rune_iron': 'assets/runes/rune_iron.png',
+            'rune_greed': 'assets/runes/rune_greed.png',
+            'rune_vision': 'assets/runes/rune_vision.png',
+            'rune_fury': 'assets/runes/rune_fury.png',
+            'rune_doom': 'assets/runes/rune_doom.png',
+            'rune_pyromancer': 'assets/runes/rune_pyro.png',
+            'rune_assassin': 'assets/runes/rune_assassin.png',
+            'rune_shapeshifter': 'assets/runes/rune_beast.png'
+        };
+
+        const updateRune = (r) => {
+            if (!r) return;
+            // 1. Assign Icon if missing OR if it needs update (overwrite "rune_skill" check?)
+            // Force update for skill runes to ensure they get new unique icons if they had generic ones
+            if (runeIconMap[r.id]) {
+                r.icon = runeIconMap[r.id];
+            } else if (r.id.startsWith('rune_focus')) {
+                r.icon = 'assets/runes/rune_focus.png';
+            } else if (r.id.startsWith('rune_haste')) {
+                r.icon = 'assets/runes/rune_haste.png';
+            }
+
+            // 2. Update Suffixes (ms -> s)
+            if (r.suffix === 'ms Dur') r.suffix = 's Duration';
+            if (r.suffix === 'ms CD') r.suffix = 's Cooldown';
+        };
+
+        // Update Inventory Sack
+        // NOTE: GameState uses 'dungeonRunes' array for sack
+        if (window.gameState.dungeonRunes && Array.isArray(window.gameState.dungeonRunes)) {
+            window.gameState.dungeonRunes.forEach(updateRune);
+        }
+        // Update Equipped Items
+        if (window.gameState.equipment) {
+            Object.values(window.gameState.equipment).forEach(item => {
+                if (item && item.rune) updateRune(item.rune);
+            });
+        }
+    }
+
     // Recalculate Stats to ensure DPS is up to date
     window.gameState.recalculateStats();
 }
@@ -656,6 +701,7 @@ function updateUI() {
     if (document.getElementById('dust-val')) document.getElementById('dust-val').textContent = formatNumber(gs.materials);
     if (document.getElementById('essence-val')) document.getElementById('essence-val').textContent = formatNumber(gs.bossEssence);
     if (document.getElementById('modal-essence-val')) document.getElementById('modal-essence-val').textContent = formatNumber(gs.bossEssence);
+    if (document.getElementById('dungeon-keys-display')) document.getElementById('dungeon-keys-display').textContent = formatNumber(gs.dungeonKeys || 0);
 
     // Stats (Center)
     if (document.getElementById('current-dps')) document.getElementById('current-dps').textContent = formatNumber(gs.averageDps || gs.totalDps);
@@ -1608,6 +1654,49 @@ function showTooltip(e, item) {
     <div class="tt-stats">
         ${formatItemStats(item, comparisonItem)}
     </div>
+    
+    <!-- Rune Slot -->
+    ${item.rune ? `
+    <div class="tt-rune" style="margin-top:8px; padding-top:8px; border-top:1px solid #444; display:flex; gap:10px; align-items:center;">
+        <div style="width:32px; height:32px; display:flex; align-items:center; justify-content:center;">
+            ${item.rune.icon ? `<img src="${item.rune.icon}" style="width:100%; height:100%; object-fit:contain;">` : '<span style="font-size:1.5rem;">💎</span>'}
+        </div>
+        <div>
+            <div style="color:${item.rune.rarity === 'legendary' ? '#ff8000' : (item.rune.rarity === 'rare' ? '#ffd700' : '#fff')}; font-weight:bold; font-size:0.85rem;">
+                ${item.rune.name} ${item.rune.skillName ? `<span style="color:#aaa; font-weight:normal;">(${item.rune.skillName})</span>` : ''}
+            </div>
+            <div style="color:#aaa; font-size:0.8rem;">
+                ${(() => {
+                let val = item.rune.val;
+                let suffix = item.rune.suffix || '';
+                let stat = item.rune.stat;
+
+                // Handle Time Conversions
+                if (suffix.includes('s Duration') || suffix.includes('s Cooldown')) {
+                    // Value stored in ms (e.g. 2000), want to show 2
+                    val = val / 1000;
+                    if (val > 0 && stat === 'cooldown') val = -val; // Visual preference: -1s Cooldown
+                }
+
+                // Format Sign
+                const sign = val > 0 ? '+' : '';
+
+                // Handle Translation
+                const key = 'stat.' + stat;
+                const trans = window.t(key);
+                const statLabel = trans !== key ? trans : stat;
+
+                // Manual Suffix Overrides for new short text
+                if (suffix === 'x Dmg') return `${sign}${val}x Damage`;
+                if (suffix === 'x Click') return `${sign}${val}x Click Dmg`;
+
+                return `${sign}${val}${suffix} ${(!suffix.includes('Damage') && !suffix.includes('Cooldown') && !suffix.includes('Duration')) ? statLabel : ''}`;
+            })()}
+            </div>
+        </div>
+    </div>
+    ` : ''}
+    
 `;
 
     // Unique Effect
@@ -3959,4 +4048,322 @@ window.addEventListener('scroll', function () {
         tooltip.style.display = 'none';
     }
 }, { passive: true, capture: true }); // Capture phase to detect scroll in sub-elements
+
+
+// Dungeon UI Helpers
+window.initDungeonModifiers = function () {
+    const container = document.getElementById('dungeon-modifiers-list');
+    if (!container || !window.DungeonManager || !window.DungeonManager.MODIFIERS) return;
+
+    container.innerHTML = '';
+
+    window.DungeonManager.MODIFIERS.forEach(mod => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '10px';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `mod-${mod.id}`;
+        checkbox.value = mod.id;
+        checkbox.dataset.loot = mod.lootMult;
+        checkbox.onchange = window.updateLootBonusDisplay;
+
+        const label = document.createElement('label');
+        label.htmlFor = `mod-${mod.id}`;
+        label.style.cursor = 'pointer';
+        label.style.flex = '1';
+        label.innerHTML = `<span style="color:#fff; font-weight:bold;">${mod.name}</span> <span style="color:#aaa; font-size:0.85rem;">(${mod.desc})</span> <span style="float:right; color:#00ffff;">+${(mod.lootMult * 100).toFixed(0)}% Loot</span>`;
+
+        row.appendChild(checkbox);
+        row.appendChild(label);
+        container.appendChild(row);
+    });
+};
+
+window.updateLootBonusDisplay = function () {
+    const checkboxes = document.querySelectorAll('#dungeon-modifiers-list input[type="checkbox"]:checked');
+    let totalBonus = 0;
+    checkboxes.forEach(cb => {
+        totalBonus += parseFloat(cb.dataset.loot);
+    });
+
+    const display = document.getElementById('loot-bonus-display');
+    if (display) {
+        display.innerText = `+${(totalBonus * 100).toFixed(0)}%`;
+        display.style.color = totalBonus > 0 ? '#00ffff' : '#aaa';
+    }
+};
+
+window.startDungeonWithModifiers = function () {
+    const checkboxes = document.querySelectorAll('#dungeon-modifiers-list input[type="checkbox"]:checked');
+    const selectedModifiers = Array.from(checkboxes).map(cb => cb.value);
+
+    // Default level 1 for now
+    if (window.gameState.dungeonManager.startDungeon(1, selectedModifiers)) {
+        // Success
+    }
+};
+
+// Initialize after short delay to ensure DungeonManager matches
+setTimeout(window.initDungeonModifiers, 1000);
+
+
+// --- RUNE FORGE LOGIC ---
+window.selectedForgeSlot = null;
+window.selectedForgeRuneIndex = null;
+
+window.openRuneForge = function () {
+    const modal = document.getElementById('rune-forge-modal');
+    if (modal) modal.style.display = 'block';
+    window.renderRuneForge();
+};
+
+window.closeRuneForge = function () {
+    document.getElementById('rune-forge-modal').style.display = 'none';
+    window.selectedForgeSlot = null;
+    window.selectedForgeRuneIndex = null;
+};
+
+window.renderRuneForge = function () {
+    const gs = window.gameState;
+
+    // 1. Render Equipped Items
+    const itemList = document.getElementById('forge-item-list');
+    itemList.innerHTML = '';
+
+    const slots = ['head', 'chest', 'hands', 'legs', 'mainhand', 'amulet'];
+    slots.forEach(slot => {
+        const item = gs.equipment[slot];
+        if (!item) return; // Skip empty slots
+
+        const div = document.createElement('div');
+        div.className = 'forge-item-slot'; // Needs CSS? Or inline
+        div.style.cssText = "width:50px; height:50px; background:#333; border:2px solid #555; display:flex; justify-content:center; align-items:center; cursor:pointer; position:relative;";
+        if (window.selectedForgeSlot === slot) div.style.borderColor = '#cfb53b';
+
+        // Icon
+        const img = document.createElement('img');
+        img.src = item.icon || 'assets/ui/icon_placeholder.png';
+        img.style.width = '40px';
+        div.appendChild(img);
+
+        // Existing Rune Indicator
+        if (item.rune) {
+            const dot = document.createElement('div');
+            dot.style.cssText = "position:absolute; bottom:2px; right:2px; width:10px; height:10px; background:#00ffff; border-radius:50%; box-shadow:0 0 5px #00ffff;";
+            div.appendChild(dot);
+        }
+
+        div.onclick = () => window.selectForgeSlot(slot, item);
+        itemList.appendChild(div);
+    });
+
+    // 2. Render Runes
+    const runeList = document.getElementById('forge-rune-list');
+    runeList.innerHTML = '';
+
+    if (gs.dungeonRunes.length === 0) {
+        runeList.innerHTML = '<span style="color:#666; font-style:italic;">No Runes found...</span>';
+    } else {
+        gs.dungeonRunes.forEach((rune, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = "width:40px; height:40px; background:#222; border:1px solid #444; display:flex; justify-content:center; align-items:center; cursor:pointer;";
+            if (window.selectedForgeRuneIndex === index) div.style.borderColor = '#00ffff';
+
+            if (rune.icon) {
+                div.innerHTML = `<img src="${rune.icon}" style="width:32px; height:32px; object-fit:contain;">`;
+            } else {
+                div.innerText = '💠';
+            }
+
+            div.onclick = () => window.selectForgeRune(index, rune);
+            runeList.appendChild(div);
+        });
+    }
+
+    window.updateForgeButton();
+    if (window.updateDestroyButton) window.updateDestroyButton();
+};
+
+window.selectForgeSlot = function (slot, item) {
+    window.selectedForgeSlot = slot;
+    const display = document.getElementById('forge-selected-item-display');
+
+    let txt = `<span style="${window.getRarityColor(item.rarity.id)}">${item.name}</span>`;
+    if (item.rune) {
+        txt += ` <span style="color:#aaa; font-size:0.8em; display:inline-flex; align-items:center; gap:5px;">
+            (Has: ${item.rune.icon ? `<img src="${item.rune.icon}" style="width:16px; height:16px;">` : '💠'} ${item.rune.name})
+        </span>`;
+    }
+
+    display.innerHTML = txt;
+    window.renderRuneForge(); // Redraw selection borders
+};
+
+window.selectForgeRune = function (index, rune) {
+    window.selectedForgeRuneIndex = index;
+    const display = document.getElementById('forge-selected-rune-display');
+
+    let val = rune.val;
+    let suffix = rune.suffix || '';
+    let stat = rune.stat;
+
+    // Handle Time Conversions (Logic duplicated from Tooltip for consistency)
+    if (suffix.includes('s Duration') || suffix.includes('s Cooldown')) {
+        val = val / 1000;
+        if (val > 0 && stat === 'cooldown') val = -val;
+    }
+
+    // Format Sign
+    const sign = val > 0 ? '+' : '';
+
+    // Handle Translation
+    let statLabel = stat;
+    if (window.t) {
+        const key = 'stat.' + stat;
+        const trans = window.t(key);
+        if (trans !== key) statLabel = trans;
+    }
+
+    // Manual Suffix Overrides
+    let valStr = `${sign}${val}${suffix}`;
+    if (suffix === 'x Dmg') valStr = `${sign}${val}x Damage`;
+    if (suffix === 'x Click') valStr = `${sign}${val}x Click Dmg`;
+
+    // Clean up if suffix already has words
+    if (!suffix.includes('Damage') && !suffix.includes('Cooldown') && !suffix.includes('Duration') && !suffix.includes('x Dmg') && !suffix.includes('x Click')) {
+        valStr += ` ${statLabel}`;
+    }
+
+    display.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            ${rune.icon ? `<img src="${rune.icon}" style="width:24px; height:24px;">` : '💠'}
+            <span>${rune.name} ${rune.skillName ? `<span style="color:#aaa; font-weight:normal;">(${rune.skillName})</span>` : ''}</span>
+            <span style="color:#ccc; margin-left:5px;">(${valStr})</span>
+        </div>
+    `;
+    window.renderRuneForge();
+};
+
+// ... (Cleaned up space)
+
+window.updateForgeButton = function () {
+    const btn = document.getElementById('forge-confirm-btn');
+    // Set Stylish Icon Button if not already set (Assuming ID exists in HTML, or we inject it?)
+    // Actually, let's inject the buttons dynamically if we want to change their look completely, 
+    // OR just update the existing button's innerHTML.
+
+    if (window.selectedForgeSlot && window.selectedForgeRuneIndex !== null) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.style.background = 'transparent';
+        btn.style.border = 'none';
+        btn.innerHTML = `<img src="assets/ui/rune_hammer.png" style="width:64px; height:64px; filter:drop-shadow(0 0 5px #ffcc00);">`;
+        btn.title = "Forge Rune";
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        btn.style.cursor = 'not-allowed';
+        btn.style.background = 'transparent';
+        btn.style.border = 'none';
+        btn.innerHTML = `<img src="assets/ui/rune_hammer.png" style="width:64px; height:64px; filter:grayscale(100%);">`;
+    }
+};
+
+// NEW: Update Destroy Button Visibility/State
+window.updateDestroyButton = function () {
+    let btn = document.getElementById('forge-destroy-btn');
+
+    // Create button if it doesn't exist (Quick injection)
+    if (!btn) {
+        const container = document.getElementById('forge-confirm-btn').parentElement; // Assuming they are in a footer
+        btn = document.createElement('button');
+        btn.id = 'forge-destroy-btn';
+        btn.style.cssText = "margin-left: 20px; background: transparent; border: none; cursor: pointer; transition: transform 0.1s;";
+        btn.onclick = window.destroyRune;
+        container.appendChild(btn);
+    }
+
+    // Only enabled if a Rune is selected (Slot selection not needed for destroy)
+    if (window.selectedForgeRuneIndex !== null) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.innerHTML = `<img src="assets/ui/rune_destroy.png" style="width:64px; height:64px; filter:drop-shadow(0 0 5px #aa00ff);">`;
+        btn.title = "Destroy Rune (+5 Boss Essence)";
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        btn.style.cursor = 'not-allowed';
+        btn.innerHTML = `<img src="assets/ui/rune_destroy.png" style="width:64px; height:64px; filter:grayscale(100%);">`;
+    }
+};
+
+window.forgeRune = function () {
+    if (!window.selectedForgeSlot || window.selectedForgeRuneIndex === null) return;
+
+    const gs = window.gameState;
+    const item = gs.equipment[window.selectedForgeSlot];
+    const rune = gs.dungeonRunes[window.selectedForgeRuneIndex];
+
+    if (!item || !rune) return;
+
+    // Apply Rune
+    item.rune = rune;
+
+    // Remove from Inventory
+    gs.removeRune(window.selectedForgeRuneIndex);
+
+    // Notify
+    gs.addToLog(`<span style="color:#00ffff; font-weight:bold;">System:</span> Forged <span style="color:#cfb53b">${rune.name}</span> into ${item.name}!`);
+
+    // Recalculate Stats
+    gs.recalculateStats();
+
+    // Close Logic
+    window.closeRuneForge();
+
+    // Visual Feedback
+    if (window.showCombatEffect) window.showCombatEffect("RUNE FORGED!", "#00ffff");
+};
+
+// NEW: Destroy Rune Logic
+window.destroyRune = function () {
+    if (window.selectedForgeRuneIndex === null) return;
+
+    const gs = window.gameState;
+    const rune = gs.dungeonRunes[window.selectedForgeRuneIndex];
+    if (!rune) return;
+
+    if (!confirm(`Destroy ${rune.name} for 5 Boss Essence?`)) return;
+
+    // Grant Essence
+    gs.bossEssence = (gs.bossEssence || 0) + 5;
+
+    // Remove from Inventory
+    gs.removeRune(window.selectedForgeRuneIndex);
+
+    // Log
+    gs.addToLog(`<span style="color:#ff00ff; font-weight:bold;">System:</span> Destroyed <span style="color:#cfb53b">${rune.name}</span> for <span style="color:#ff00ff;">5 Boss Essence</span>.`);
+
+    // Refresh UI
+    window.selectedForgeRuneIndex = null; // Deselect
+    window.renderRuneForge(); // Re-render list
+
+    if (window.showCombatEffect) window.showCombatEffect("+5 Essence!", "#ff00ff");
+};
+
+// Helper for Rarity Colors (if not exists)
+window.getRarityColor = function (rarityId) {
+    // Assuming RARITY global exists from Item.js
+    if (window.RARITY) {
+        const key = Object.keys(window.RARITY).find(k => window.RARITY[k].id === rarityId);
+        if (key) return `color:${window.RARITY[key].color};`;
+    }
+    return 'color:#fff;';
+};
+
 

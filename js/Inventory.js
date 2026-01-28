@@ -205,9 +205,27 @@ class InventoryManager {
             // Expose affinity bonuses for GameState to pick up
             classAffinity: affBonuses,
 
+            // Skill Bonuses from Runes
+            skillBonuses: this.calculateSkillBonuses(),
+
             // Unique Effects
             activeEffects: this.collectActiveEffects()
         };
+    }
+
+    calculateSkillBonuses() {
+        const bonuses = {};
+        Object.values(this.gameState.equipment).forEach(item => {
+            if (item && item.rune && item.rune.type === 'skill') {
+                const sId = item.rune.skillId;
+                if (!bonuses[sId]) bonuses[sId] = {};
+
+                // Add value
+                const stat = item.rune.stat; // e.g. 'damageMult'
+                bonuses[sId][stat] = (bonuses[sId][stat] || 0) + item.rune.val;
+            }
+        });
+        return bonuses;
     }
 
     collectActiveEffects() {

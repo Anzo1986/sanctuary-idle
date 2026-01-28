@@ -4,6 +4,7 @@ class GameState {
         this.gold = 0;
         this.materials = 0; // New resource: Arcane Dust
         this.bossEssence = 0; // New resource: Boss Essence
+        this.dungeonKeys = 0; // Dungeon Keys
         this.stage = 1;
 
         this.monstersKilledInStage = 0;
@@ -29,6 +30,7 @@ class GameState {
 
         this.reincarnationManager = new window.ReincarnationManager(this);
         this.merchantManager = new window.MerchantManager(this);
+        this.dungeonManager = new window.DungeonManager(this);
 
         // Skill Buffs
         this.buffs = {
@@ -61,7 +63,8 @@ class GameState {
 
         // Generic Buffs & DoTs
         this.activeBuffs = []; // [{id, expires, icon, name}]
-        this.activeDots = []; // [{type, dps, duration, timer}]
+        this.activeDots = [];
+        this.bossesSinceLastKey = 0; // Pity timer for keys // [{type, dps, duration, timer}]
 
 
 
@@ -132,6 +135,23 @@ class GameState {
     }
 
     update(dt) {
+        // Dungeon Logic Delegation
+        if (this.dungeonManager && this.dungeonManager.inDungeon) {
+            this.dungeonManager.update(dt);
+
+            // Dungeon Modifier: Regenerating
+            if (this.dungeonManager.activeModifiers.includes('regen') &&
+                this.currentMonster && this.currentMonster.currentHp > 0 &&
+                this.currentMonster.currentHp < this.currentMonster.maxHp) {
+
+                const regenAmount = this.currentMonster.maxHp * 0.02 * dt; // 2% per sec
+                this.currentMonster.currentHp += regenAmount;
+                if (this.currentMonster.currentHp > this.currentMonster.maxHp) {
+                    this.currentMonster.currentHp = this.currentMonster.maxHp;
+                }
+            }
+        }
+
         // Mage Ability: Meteor (T5) - Every 10s
         if (this.ascensionManager.hasAbility('meteor')) {
             // dt is in seconds (e.g. 0.033). If missing, assume 16ms (0.016s). BUT allow 0!
@@ -232,6 +252,7 @@ class GameState {
         if (type === 'gold') this.gold += amount;
         if (type === 'materials') this.materials += amount;
         if (type === 'essence') this.bossEssence += amount;
+        if (type === 'dungeonKeys') this.dungeonKeys += amount;
     }
 
     addToLog(msg) {
@@ -241,6 +262,19 @@ class GameState {
 
         // Force UI update for log if possible, or wait for next frame
         // window.updateUI(); // Might cause lag if called too often
+    }
+
+    addRune(rune) {
+        if (!this.dungeonRunes) this.dungeonRunes = [];
+        this.dungeonRunes.push(rune);
+    }
+
+    removeRune(index) {
+        if (this.dungeonRunes && index > -1 && index < this.dungeonRunes.length) {
+            this.dungeonRunes.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     // Delegated Methods
@@ -271,6 +305,7 @@ class GameState {
         // ... (Lines 84-91 stay same, implicit)
         // 1. Equipment Bonuses
         const equipMults = this.inventoryManager.calculateMultipliers();
+        this.skillBonuses = equipMults.skillBonuses || {}; // Store for SkillManager
         // 2. Upgrade Bonuses
         const upgradeBonuses = this.upgradeManager.getMultipliers();
         // 3. Paragon Bonuses
@@ -527,6 +562,27 @@ class GameState {
     }
 
     spawnMonster() {
+        // Dungeon Handling
+        if (this.dungeonManager && this.dungeonManager.inDungeon) {
+            // If Dungeon Boss is supposedly spawned via manager, do nothing or handle it there
+            if (this.dungeonManager.dungeonBossSpawned) {
+                // Manager handles it
+                return;
+            }
+            // Spawn Dungeon Mob
+            const scalingStage = this.stage; // Or custom dungeon level logic
+            this.currentMonster = new window.Monster(scalingStage, false);
+            this.currentMonster.name = "Dungeon " + this.currentMonster.name;
+            // Buff Dungeon Mobs slightly?
+            let hpMult = 1.2;
+            if (this.dungeonManager.activeModifiers.includes('tanky')) hpMult += 0.5; // +50%
+
+            this.currentMonster.maxHp = Math.ceil(this.currentMonster.maxHp * hpMult);
+            this.currentMonster.currentHp = this.currentMonster.maxHp;
+            this.bossTimer = null;
+            return;
+        }
+
         const isBoss = this.monstersKilledInStage >= 10;
         this.currentMonster = new window.Monster(this.stage, isBoss);
 
@@ -835,6 +891,13 @@ class GameState {
     }
 
     onMonsterDeath() {
+        // Dungeon Logic Hook
+        if (this.dungeonManager && this.dungeonManager.inDungeon) {
+            this.dungeonManager.onMonsterDeath();
+            // We still award minimal Gold/XP? 
+            // Let's grant standard rewards for now to make it worth it.
+        }
+
         // Award Cinders 
         const cinderDrop = this.getMonsterCinders(this.currentMonster.maxHp);
         this.addResource('cinders', cinderDrop);
@@ -938,6 +1001,24 @@ class GameState {
 
                 // Stat Track
                 this.stats.totalBossKills = (this.stats.totalBossKills || 0) + 1;
+
+                // Dungeon Key Drop Logic (Base 25% + Pity)
+                this.bossesSinceLastKey = (this.bossesSinceLastKey || 0) + 1;
+
+                let dropKey = false;
+                if (!this.dungeonManager.inDungeon) {
+                    // 10% Chance OR Guaranteed every 10 bosses
+                    if (Math.random() < 0.10 || this.bossesSinceLastKey >= 10) {
+                        dropKey = true;
+                    }
+                }
+
+                if (dropKey) {
+                    this.addResource('dungeonKeys', 1);
+                    this.addToLog(`<span style="color:#ff8800; font-weight:bold; font-size:1.1rem;">🗝️ Dungeon Key Dropped!</span>`);
+                    this.bossesSinceLastKey = 0;
+                    if (window.showCombatEffect) window.showCombatEffect("🗝️ KEY!", "#ff8800");
+                }
             }
         } else {
             this.monstersKilledInStage++;
@@ -1067,8 +1148,10 @@ class GameState {
                 materials: this.materials,
                 bossEssence: this.bossEssence,
                 skillPoints: this.skillPoints,
+                dungeonKeys: this.dungeonKeys,
                 purchasedSkills: this.purchasedSkills,
-                equippedSkills: this.equippedSkills
+                equippedSkills: this.equippedSkills,
+                dungeonRunes: this.dungeonRunes
             },
             progression: {
                 stage: this.stage
@@ -1203,8 +1286,10 @@ class GameState {
             this.materials = data.resources.materials || 0;
             this.bossEssence = data.resources.bossEssence || 0;
             this.skillPoints = data.resources.skillPoints || 0;
+            this.dungeonKeys = data.resources.dungeonKeys || 0;
             this.purchasedSkills = data.resources.purchasedSkills || [];
             this.equippedSkills = data.resources.equippedSkills || [null, null, null, null];
+            this.dungeonRunes = data.resources.dungeonRunes || [];
         }
 
         // Progression

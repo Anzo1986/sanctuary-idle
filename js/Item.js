@@ -538,6 +538,7 @@ class Item {
 
 
     adjustLevel(newLevel) {
+        // ... existing implementation ...
         if (newLevel <= 0) newLevel = 1;
 
         const oldStage = this.stage;
@@ -569,6 +570,24 @@ class Item {
             const baseDmg = 10 * Math.pow(1.16, this.stage - 1);
             this.clickDamageFlat = Math.floor(baseDmg);
         }
+    }
+
+    getStats() {
+        // Start with base stats copy
+        const total = { ...this.stats };
+
+        // Add Rune Stats if active
+        if (this.rune) {
+            // Handle special mapping if needed, or direct add
+            // If stat doesn't exist on base item, add it
+            if (total[this.rune.stat]) {
+                total[this.rune.stat] += this.rune.val;
+            } else {
+                total[this.rune.stat] = this.rune.val;
+            }
+        }
+
+        return total;
     }
 }
 

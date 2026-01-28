@@ -1397,6 +1397,18 @@ border: 1px solid #444;
     scrollbar-width: thin;
 }
 
+/* Dungeon Modal Overrides */
+#dungeon-modal .modal-content {
+    width: 85vh; /* Square-ish to fit art */
+    height: 85vh;
+    max-width: 95vw;
+    margin: 4vh auto;
+    border-radius: 12px;
+    box-shadow: 0 0 50px rgba(255, 136, 0, 0.2);
+    border: 1px solid #ff8800;
+    justify-content: center; /* Center content vertically */
+}
+
 /* Skill System Styles */
 
 /* Active Skills Container (Left of Monster) */
@@ -2600,4 +2612,24 @@ border: 1px solid #444;
         overflow: hidden;
         text-overflow: ellipsis;
     }
+}
+/* Dungeon Styles */
+.dungeon-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.dungeon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px rgba(255, 136, 0, 0.5);
+    background: rgba(40, 20, 0, 0.8) !important;
+    cursor: pointer;
+}
+#dungeon-hud {
+    animation: fadeIn 0.5s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+#dungeon-progress-bar {
+    box-shadow: 0 0 5px rgba(207, 181, 59, 0.5);
 }

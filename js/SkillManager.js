@@ -388,6 +388,15 @@ class SkillManager {
         // Clone stats to avoid modifying base data
         const stats = { ...skill.stats };
 
+        // Apply Rune Bonuses (Skill Runes)
+        if (this.gameState.skillBonuses && this.gameState.skillBonuses[skillId]) {
+            const bonuses = this.gameState.skillBonuses[skillId];
+            Object.entries(bonuses).forEach(([key, val]) => {
+                // Additive Application
+                stats[key] = (stats[key] || 0) + val;
+            });
+        }
+
         // Apply Modifiers
         if (this.gameState.ascensionManager && this.gameState.ascensionManager.getMultipliers) {
             const bonuses = this.gameState.ascensionManager.getMultipliers();

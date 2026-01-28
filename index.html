@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+    <script src="js/DungeonManager.js"></script>
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
     <link rel="apple-touch-startup-image" href="assets/ui/splash.png?v=55">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -93,11 +94,28 @@
                 "></div>
             </div>
 
-            <div id="stage-info">
-                <h3><span data-i18n="stage.prefix">Stage</span> <span id="stage-number">1</span></h3>
+            <div id="stage-info" style="display: flex; flex-direction: column; align-items: center;">
+                <h3>
+                    <span data-i18n="stage.prefix">Stage</span> <span id="stage-number">1</span>
+                    <span id="dungeon-title-display"
+                        style="display:none; color:#ff8800; margin-left:10px; font-size:1.0rem;">THE VAULT</span>
+                </h3>
                 <div id="stage-progress">
                     <div id="stage-bar"></div>
                     <span id="stage-text">0/10</span>
+                </div>
+            </div>
+
+            <!-- Dungeon HUD (Hidden by default) -->
+            <div id="dungeon-hud"
+                style="display:none; flex-direction:column; align-items:center; width:100%; margin-bottom:10px;">
+                <div style="font-size:1.5rem; color:#fff;" id="dungeon-timer">120.0s</div>
+                <div
+                    style="width:80%; height:15px; background:#220; border:1px solid #777; margin-top:5px; position:relative;">
+                    <div id="dungeon-progress-bar"
+                        style="width:0%; height:100%; background:#cfb53b; transition: width 0.2s;"></div>
+                    <span id="dungeon-progress-text"
+                        style="position:absolute; width:100%; text-align:center; top:-2px; font-size:0.8rem; text-shadow:1px 1px 1px #000;">0/20</span>
                 </div>
             </div>
 
@@ -443,6 +461,13 @@
             </header>
             <div style="display:flex; flex-direction:column; gap:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Dungeon Keys:</span>
+                    <div>
+                        <button class="sys-btn" onclick="window.devAdd('dungeonKeys', 1)">+1</button>
+                        <button class="sys-btn" onclick="window.devAdd('dungeonKeys', 10)">+10</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span>Gold:</span>
                     <div>
                         <button class="sys-btn" onclick="window.devAdd('gold', 1000000)">+1M</button>
@@ -490,6 +515,10 @@
                         Legendary</button>
                     <button class="sys-btn" style="width:100%; margin-top:5px; color:#00ffff;"
                         onclick="window.devAddSetItem()">Spawn Random Set Item</button>
+                    <button class="sys-btn" style="width:100%; margin-top:5px; color:#ff8000;"
+                        onclick="window.devSpawnRune()">Spawn Random Rune</button>
+                    <button class="sys-btn" style="width:100%; margin-top:5px; color:#cfb53b;"
+                        onclick="window.openRuneForge()">Open Rune Forge</button>
 
                     <div style="margin-top:10px; border-top:1px solid #444; padding-top:5px;">
                         <select id="dev-unique-select"
@@ -531,7 +560,9 @@
                 <button id="btn-skills" class="menu-btn" style="color:#ff00ff;" data-i18n="btn.skills">Skills</button>
                 <button id="btn-merchant" class="menu-btn" style="color:#00ff00;"
                     data-i18n="btn.merchant">Merchant</button>
-                <button class="menu-btn disabled" title="Coming Soon">Dungeons (Soon)</button>
+                <button id="btn-dungeons" class="menu-btn" style="color:#ff8800; border-color: #ff8800;"
+                    onclick="document.getElementById('dungeon-modal').style.display='block'; document.getElementById('menu-modal').style.display='none';">The
+                    Vault (Dungeons)</button>
                 <button class="menu-btn disabled" title="Coming Soon">Bestiarium (Soon)</button>
                 <button id="btn-achievements" class="menu-btn" style="color:var(--accent-gold);"
                     data-i18n="btn.achievements">Achievements</button>
@@ -635,6 +666,99 @@
         </div>
     </div>
     </div>
+    </div>
+
+    <!-- Dungeon Modal -->
+    <div id="dungeon-modal" class="modal">
+        <div class="modal-content large-modal"
+            style="text-align:center; background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('assets/ui/dungeon_menu_bg.png'); background-size:cover;">
+            <span class="close-modal"
+                onclick="document.getElementById('dungeon-modal').style.display='none'">&times;</span>
+            <h2 style="color:#ff8800; font-size:2rem; margin-bottom:10px;">The Lost Vaults</h2>
+            <p style="color:#ccc; margin-bottom:20px;">Enter the vault, defeat the guardians, and claim forgotten
+                treasures.</p>
+
+            <div
+                style="margin-bottom:20px; color:#ddd; background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; display:inline-block; border:1px solid #444;">
+                <p style="margin:5px 0;"><strong>Difficulty:</strong> Scales with Current Stage</p>
+                <p style="margin:5px 0; color:#cfb53b;"><strong>Key Cost:</strong> 1 Key</p>
+            </div>
+
+            <div style="font-size:0.9rem; color:#aaa; margin-bottom:5px;">keys available: <span
+                    id="dungeon-keys-display">0</span></div>
+
+            <!-- Modifiers Section -->
+            <div
+                style="text-align:left; background:rgba(0,0,0,0.6); padding:10px; border:1px solid #555; margin:0 auto 20px auto; max-width:80%; border-radius:4px;">
+                <h4 style="margin:0 0 10px 0; color:#cfb53b; border-bottom:1px solid #444; padding-bottom:5px;">
+                    Modifiers <span style="float:right; font-size:0.8rem; color:#aaa;">Bonus Loot: <span
+                            id="loot-bonus-display" style="color:#00ffff">+0%</span></span>
+                </h4>
+                <div id="dungeon-modifiers-list" style="display:flex; flex-direction:column; gap:5px;">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <button class="sys-btn" style="width:200px; font-size:1.2rem; border-color:#ff8800; color:#ff8800;"
+                onclick="window.startDungeonWithModifiers()">ENTER VAULT</button>
+        </div>
+    </div>
+
+    <!-- Rune Forge Modal -->
+    <div id="rune-forge-modal" class="modal">
+        <div class="modal-content large-modal" style="
+            text-align:center; 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/ui/rune_forge_bg.png'); 
+            background-size: cover; 
+            background-position: center;
+            border: 2px solid #555; 
+            width: 800px;
+            max-width: 95vw;
+            min-height: 550px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);">
+            <h2 style="color:#cfb53b; font-family:'Cinzel', serif; margin-bottom: 20px; text-shadow: 0 0 10px #000;">
+                Rune Forge</h2>
+
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Select an item to empower, then choose a Rune.
+            </p>
+
+            <!-- Step 1: Select Item -->
+            <div
+                style="background:rgba(0,0,0,0.4); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #444;">
+                <h4 style="color:#ddd; margin:0 0 10px 0; text-shadow: 0 0 5px #000;">1. Select Equipment</h4>
+                <div id="forge-item-list" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                    <!-- JS Injected: Icons of equipped items -->
+                </div>
+                <div id="forge-selected-item-display"
+                    style="height:20px; margin-top:10px; font-weight:bold; color:#fff;"></div>
+            </div>
+
+            <!-- Step 2: Select Rune -->
+            <div
+                style="background:rgba(0,0,0,0.4); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #444;">
+                <h4 style="color:#ddd; margin:0 0 10px 0; text-shadow: 0 0 5px #000;">2. Select Rune</h4>
+                <div id="forge-rune-list"
+                    style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; min-height:50px;">
+                    <!-- JS Injected: Runes from Dungeon Sack -->
+                    <span style="color:#666; font-style:italic;">No Runes found...</span>
+                </div>
+                <div id="forge-selected-rune-display"
+                    style="height:20px; margin-top:10px; font-weight:bold; color:#00ffff;"></div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; justify-content:space-between; margin-top:30px; align-items:center;">
+                <button class="sys-btn"
+                    style="border-color:#555; color:#ccc; display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.6);"
+                    onclick="window.closeRuneForge()">
+                    <img src="assets/ui/rune_exit.png" style="width:24px; height:24px;"> Leave Forge
+                </button>
+                <div style="flex-grow:1;"></div> <!-- Spacer -->
+                <button id="forge-confirm-btn" class="sys-btn"
+                    style="border-color:#cfb53b; color:#cfb53b; opacity:0.5; cursor:not-allowed;" disabled
+                    onclick="window.forgeRune()">Forge Rune</button>
+            </div>
+        </div>
     </div>
 
     <!-- Guide Modal -->

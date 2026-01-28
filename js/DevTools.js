@@ -156,3 +156,64 @@ window.devKillBoss = function () {
         window.gameState.addToLog(`<span style="color:red">[DEV] INSTANT KILL!</span>`);
     }
 };
+
+window.devSpawnRune = function () {
+    if (!window.gameState) return;
+
+    const runes = [
+        { id: 'rune_power', name: 'Rune of Power', stat: 'damage', val: 50 + (window.gameState.stage * 10), rarity: 'common', suffix: '%', icon: 'assets/runes/rune_power.png' },
+        { id: 'rune_iron', name: 'Rune of Iron', stat: 'bossDamage', val: 100 + (window.gameState.stage * 5), rarity: 'common', suffix: '%', icon: 'assets/runes/rune_iron.png' },
+        { id: 'rune_greed', name: 'Rune of Greed', stat: 'goldFind', val: 200 + (window.gameState.stage * 10), rarity: 'rare', suffix: '%', icon: 'assets/runes/rune_greed.png' },
+        { id: 'rune_vision', name: 'Rune of Vision', stat: 'magicFind', val: 50 + (window.gameState.stage * 2), rarity: 'rare', suffix: '%', icon: 'assets/runes/rune_vision.png' },
+        { id: 'rune_fury', name: 'Rune of Fury', stat: 'attackSpeed', val: 0.20, rarity: 'legendary', suffix: '%', icon: 'assets/runes/rune_fury.png' },
+        { id: 'rune_doom', name: 'Rune of Doom', stat: 'critDamage', val: 300 + (window.gameState.stage * 15), rarity: 'legendary', suffix: '%', icon: 'assets/runes/rune_doom.png' },
+        // SKILL RUNES
+        { id: 'rune_pyromancer', name: 'Rune of Pyromancer', type: 'skill', skillId: 'mage_1', stat: 'damageMult', val: 0.5, rarity: 'common', suffix: 'x Dmg', icon: 'assets/runes/rune_pyro.png' },
+        { id: 'rune_assassin', name: 'Rune of Assassin', type: 'skill', skillId: 'rogue_1', stat: 'damageMult', val: 0.5, rarity: 'common', suffix: 'x Dmg', icon: 'assets/runes/rune_assassin.png' },
+        { id: 'rune_shapeshifter', name: 'Rune of Beast', type: 'skill', skillId: 'druid_1', stat: 'clickDmgMult', val: 0.5, rarity: 'common', suffix: 'x Click', icon: 'assets/runes/rune_beast.png' }
+    ];
+
+    let pickedRune = runes[Math.floor(Math.random() * runes.length)];
+
+    // Dynamic Skill Rune Logic for Rare/Legendary
+    if (Math.random() < 0.3) {
+        const skills = ['mage_1', 'mage_2', 'rogue_1', 'paladin_1', 'barbarian_1', 'necromancer_1', 'amazon_1'];
+        const targetSkill = skills[Math.floor(Math.random() * skills.length)];
+        const skillName = window.t ? window.t(`skill.name.${targetSkill}`) : targetSkill;
+
+        if (Math.random() < 0.5) {
+            pickedRune = {
+                id: `rune_focus_${targetSkill}`,
+                name: `Rune of Focus`,
+                type: 'skill',
+                skillId: targetSkill,
+                stat: 'duration',
+                val: 2000,
+                rarity: 'rare',
+                suffix: 's Duration',
+                skillName: skillName,
+                icon: 'assets/runes/rune_focus.png'
+            };
+        } else {
+            pickedRune = {
+                id: `rune_haste_${targetSkill}`,
+                name: `Rune of Haste`,
+                type: 'skill',
+                skillId: targetSkill,
+                stat: 'cooldown',
+                val: -1000,
+                rarity: 'legendary',
+                suffix: 's Cooldown',
+                skillName: skillName,
+                icon: 'assets/runes/rune_haste.png'
+            };
+        }
+    }
+
+    const runeInstance = { ...pickedRune, uid: Date.now() + Math.random() };
+    window.gameState.addRune(runeInstance);
+
+    // Log
+    const color = runeInstance.rarity === 'legendary' ? '#ff8000' : (runeInstance.rarity === 'rare' ? '#ffd700' : '#cfb53b');
+    window.gameState.addToLog(`<span style="color:${color}; font-weight:bold;">[DEV] Spawned Rune: ${runeInstance.name}</span>`);
+};
